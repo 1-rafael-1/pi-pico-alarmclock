@@ -1,0 +1,55 @@
+from machine import Pin, ADC, mem32
+
+class PowerManager:
+    def __init__(self, lower_bound=2.5, upper_bound=4.0):
+        self.lower_bound = lower_bound
+        self.upper_bound = upper_bound
+        self.conversion_factor = 3.3 / 65535
+        self.vsys_voltage = 0
+        self.temperature = 0
+        
+    def initialize(self):
+        self.read_vsys()
+
+    def get_battery_state(self):
+        if self.vsys_voltage >= self.upper_bound:
+            return "Charging"
+        elif self.vsys_voltage < self.lower_bound:
+            return "Error"
+        else:
+            return "Normal"
+
+    def get_battery_charge_percentage(self):
+        if self.vsys_voltage >= self.upper_bound:
+            return 100
+        elif self.vsys_voltage < self.lower_bound:
+            return 0
+        else:
+            return int((self.vsys_voltage - self.lower_bound) * 100 / (self.upper_bound - self.lower_bound))
+        
+    def is_usb_powered(self):
+        vbus = Pin("WL_GPIO2", Pin.IN)
+        return vbus.value()
+    
+    def get_pad(self, gpio):
+        return mem32[0x4001c000 | (4+ (4 * gpio))]
+    
+    def det_pad(self, gpio, value):
+        mem32[0x4001c000 | (4+ (4 * gpio))] = value
+
+    def read_vsys(self):
+        oldpad = self.get_pad(29)
+        self.det_pad(29,128)  #no pulls, no output, no input
+        adc_vsys = ADC(3)
+        vsys = adc_vsys.read_u16() * 3.0 * self.conversion_factor
+        self.det_pad(29,oldpad)
+        self.vsys_voltage = vsys
+
+    def read_temperature(self):
+        sensor_temp = ADC(4)
+        conversion_factor = 3.3 / (65535)
+        reading = sensor_temp.read_u16() * conversion_factor
+        self.temperature = round((27 - (reading - 0.706)/0.001721), 2)
+
+    def get_temperature(self):
+        return self.temperature
