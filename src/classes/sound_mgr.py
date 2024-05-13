@@ -3,7 +3,7 @@ from utime import sleep
 
 class SoundManager:
     def __init__(self, state_mgr):
-        self.player = DFPlayerMini(uartinstance=0, tx_pin=0, rx_pin=1, power_pin=16)
+        self.player = DFPlayerMini(uartinstance=0, tx_pin=0, rx_pin=1, power_pin=8)
         self.state_mgr = state_mgr
 
     def delay(self):
