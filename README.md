@@ -100,6 +100,10 @@ Here is my best attempt at a wiring diagram. I have used [Circuit Diagram](https
 
 ![Alarm Clock Circuit Power Bypassing Pico](wiring/circuit.png)
 
+### Enclosure and Assembly
+
+See [enclosure](/enclosure/README.md) for information on hoe to print and assemble.
+
 ### Power Consumption
 
 My observed battery life is around 36 hours from fully charged to the charger module switching everything off. This does seem a bit quick for my gut feeling, so I wanted to get a better idea if I have made a mistake somewhere or if I could reasonably expect to be able to tweak that somehow.
