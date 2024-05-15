@@ -89,7 +89,7 @@ The central part of this project is the Raspberry Pi Pico W. I am sure everythin
 |step-up converter|A step up capable to convert 2.5V - 5V to steady 5V. Required to power the NeoPixel-Ring. I have used HW-085. There are a ton of these things available everywhere, make sure it is DC-DC and can put out 1000mA for 5V and can convert to that from whatever You expect to come out of Your power supply.|
 |speaker|I have used DFplayer Mini 3 Watt 8 Ohm speaker, 70*30*15mm. They can be found in some flavors from multiple vendors. Depending on the form factor You may need to adjust the case, but I guess that cannot be helped since there are so many different of these speakers around.|
 |p-channel MOSFET|Two used to switch power modules. I have used IRF9540 which is overkill and and more efficient options exist. These things are rated for up to 100V and the switching voltage is uncomfortably close to USB typical ~5V. So, maybe they now have a higher voltage drop from source to drain, than I would like.|
-|n-channel MOSFET|One used to control power supply to mp3 module. I have used STP16NF06.|
+|n-channel MOSFET|One used to control power supply to mp3 module. I have used IRLZ44N.|
 |Schottky diode|One used to prevent power from flowing back into Pi Picos VBUS when powering from battery. Anything rated for up to 5V will do.|
 |mp3 module|I have used DFR0299 (DFPlayer), which was easy to wire. It has a micro-sd card slot and an internal amplifier, greatly reducing overall complexity compared to other solutions I found. Also unfortunately my last struggle left... not yet reliable.|
 |micro sd card|Really, anything You have lying around, formatted to FAT32.|
