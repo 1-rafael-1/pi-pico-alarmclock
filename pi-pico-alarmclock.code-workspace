@@ -30,7 +30,10 @@
 		],
 		"pylint.enabled": false,
 		"cSpell.words": [
+			"backfeeding",
+			"baudrate",
 			"Fplayer",
+			"GPIO",
 			"lighshow",
 			"lightsaber",
 			"lightsleep",
@@ -40,6 +43,9 @@
 			"Pico",
 			"Picos",
 			"Schottky",
+			"uart",
+			"uartinstance",
+			"UDISK",
 			"Underclocking",
 			"VBUS"
 		]

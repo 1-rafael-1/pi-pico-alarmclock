@@ -45,7 +45,7 @@ class StateManager:
 
         self.button_manager.initialize()
 
-        self.sound_manager.initialize()
+        #self.sound_manager.initialize()
 
         self.alarm_manager.start_alarm_timer()
 

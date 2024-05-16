@@ -38,7 +38,7 @@ That being said: This is going to be full of imperfections. Use any of this at Y
   + At the same time in the indicator area of the display we will show a random color as text, using the button colors. Pressing the appropriate button will proceed to show the next color, until one has pressed all three buttons in the order the device wanted them. Completing the sequence will abort the alarm at any stage. The assumption is: If You are awake enough to have found and pressed the buttons in the random order that You were presented, You should be awake enough to get out of bed.
   + At the actual alarm time the sunrise will becompleted and the NeoPixel will display some fancy lighshow-things. At the same time the Music starts tom play, in my case here I chose the Imperial March, because that is what the kids love.
 
-![Prototype on breadboard](wiring/prototype_breadboard.png)
+![Prototype on breadboard](wiring/prototype-breadboard.png)
 
 ## Code
 
@@ -89,8 +89,9 @@ The central part of this project is the Raspberry Pi Pico W. I am sure everythin
 |step-up converter|A step up capable to convert 2.5V - 5V to steady 5V. I used BS01 (sometimes found as MT-3608 or HW-085). Required to power the NeoPixel-Ring. There are a ton of these things available everywhere, make sure it is DC-DC and can put out 1000mA for 5V and can convert to that from whatever You expect to come out of Your power supply.|
 |speaker|I have used DFplayer Mini 3 Watt 8 Ohm speaker, 70*30*15mm. They can be found in some flavors from multiple vendors. Depending on the form factor You may need to adjust the case, but I guess that cannot be helped since there are so many different of these speakers around.|
 |p-channel MOSFET|Two used to switch power modules. I have used IRF9540 which is overkill and and more efficient options exist. These things are rated for up to 100V and the switching voltage is uncomfortably close to USB typical ~5V. So, maybe they now have a higher voltage drop from source to drain, than I would like.|
+|n-channel MOSFET|One used to control power supply to mp3 module. I have used IRLZ44N.|
 |Schottky diode|One used to prevent power from flowing back into Pi Picos VBUS when powering from battery. Anything rated for up to 5V will do.|
-|mp3 module|I have used DFR0299, which was easy to wire. It has a micro-sd card slot and an internal amplifier, greatly reducing overall complexity compared to other solutions I found. Also unfortunately my last struggle left... not yet reliable.|
+|mp3 module|I have used DFR0299 (DFPlayer), which was easy to wire. It has a micro-sd card slot and an internal amplifier, greatly reducing overall complexity compared to other solutions I found. Also unfortunately my last struggle left... not yet reliable.|
 |micro sd card|Really, anything You have lying around, formatted to FAT32.|
 |push button|Three used. 13mm diameter, 8mm hight caps on 12x12x7.3mm button - these should be fairly standard. One caps each in yellow, green and blue.|
 
@@ -100,6 +101,13 @@ Here is my best attempt at a wiring diagram. I have used [Circuit Diagram](https
 
 ![Alarm Clock Circuit Power Bypassing Pico](wiring/circuit.png)
 
+A few things to note here:
+
++ The buttons are debounced in code, so they have no debouncing circuits.
++ The mp3-module does not normally require a switchable power supply. In my case here I struggled with the DFPlayer I bought, it just would not work anymore after a certain time of idling. The same problem could be replicated by sending it into standby. Not all drivers I found even have the wake-up command implemented and even the ones I tested with never seemed to wake the device up again. At the same time the mp3-module is the most unused one in this entire application, but draws 20mA regardless of whether it does anything or not. So: I decided to power it up and down as needed. To achieve this I used an n-channel-MOSFET. The gate is connected to a GPIO and source to drain sit between the power and the device. That way I can pull the GPIO high to allow the mp3-module to be powered and pull it back low as soon as I do not need it any more. Solves my standby issue and enhances battery life.
++ The power circuit is strongly inspired by the Raspberry Pi Pico documentation. I use one p-channel-MOSFET to cut power from the battery supply, as long as VBUS is powered externally. This is achieved by running a wire from VBUS to the MOSFET gate (VBUS is directly connected to the Micro-USB of the Pico). The second p-channel-MOSFET is used in the same fashion to cut power from the battery to the NeoPixel, as long as VBUS is powered.
++ The NeoPixel needs 5V and so is either supplied from VBUS or from the battery via the step-up-converter. The wire from VBUS to the step-up-converter has a Schottky-diode to prevent power from backfeeding into VBUS when powered from the battery. 
+  
 ### Enclosure and Assembly
 
 See [enclosure](/enclosure/README.md) for information on hoe to print and assemble.
@@ -134,5 +142,7 @@ So here is what I tried or planned to do in order to optimize power consumption:
 + **Pico**: The microcontroller is the most power-hungry component by a long shot. The only reason we need it doing things frequently is the seconds hand on the analog clock.
   + So I fiddled with `lightsleep()` to see if I could achieve the same functionality. This did not work for me. I may have gotten something wrong, but the way it looks the device does not wake up from timers and could wake up from interrupts, but even then not a rising or falling Pin, but a high or low pin. Beyond my expertise at this point to make use of, if there even is a way.
   + Underclocking the Pico is easy and will reduce power consumption. As we are not doing any heavy lifting in this project, we surely do not need the full clock speed. I found that mostly everything works even of half the frequency, even if feeling a little sluggish at startup and when using the buttons to set alarm time. Unfortunately the NeoPixel Ring stops working even when reducing the frequency moderately. It kind of still lights up and kind of inspired by what I coded... but sometimes it was an LED too much, too little, not the color I wanted, not the position I wanted. Very odd, but that for now is the end of reducing clock speed for me.
+    + UPDATE: I think I understand now, why the NeoPixel does not work when underclocking. The implementation uses the programmable state machines of the RP2040 chip. Those obviously also clock slower, when underclocking the chip. The NeoPixel needs its signals timed very precisely to know specifically WHAT to light up. And this very timing is derailed, when the clock speed is reduced. To make this work, I would need to make a copy of the NeoPixel implementation (assembly code embedded into MicroPython) and figure out how to tinker this into working on a defined lower clock speed. This is beyond my ability for now.
 + **OLED**: Is not needed at full brightness and should use less power when dimmed. Unfortunately no amount of tinkering with the driver got me a visible effect, so this is probably a dead end, too.
-+ **system loss**: When finally taking things out of the breadboard and soldering I will make sure to make wires as short as they can reasonably be, solder the gate pins of both MOSFET together, maybe buy more appropriate MOSFET ... cut the legs of the diode to solder as close to the thing as possible. And generally see to good connections without solder wire blobs. Nothing I can do, now. Also nothing that I expect to change the overall result much.
++ **system loss**: When finally taking things out of the breadboard and soldering I will make sure to make wires as short as they can reasonably be, solder the gate pins of both MOSFET together, maybe buy more appropriate MOSFET ... cut the legs of the diode to solder as close to the thing as possible. And generally see to good connections without solder wire blobs. Nothing that I expect to change the overall result much.
++ UPDATE: During troubleshooting an issue with the DFPlayer I was forced to introduce a way to switch power for this module in order to make it work. As a bonus we can now keep it powerded down for most of the time, saving 15mA and theoretically this should extend battery life to >41h.
