@@ -10,6 +10,7 @@ from classes.btn_mgr import ButtonManager
 from classes.menu_mgr import MenuManager
 from classes.power_mgr import PowerManager
 from classes.alarm_mgr import AlarmManager
+from classes.lowpower_mgr import LowPowerManager
 
 class StateManager:
     def __init__(self):
@@ -22,6 +23,7 @@ class StateManager:
         self.button_manager = ButtonManager(self)
         self.sound_manager = SoundManager(self)
         self.alarm_manager = AlarmManager(self)
+        self.lowpower_manager = LowPowerManager(self)
         self.alarm_active = False
         self.menu_active = False
         self.alarm_time = '{:02d}:{:02d}'.format(0,0)
@@ -247,6 +249,17 @@ class StateManager:
     def sound_alarm_stop(self):
         self.sound_manager.alarm_stop()
     # endregion
+
+    # region ButtonManager methods
+    def button_green_pin(self):
+        return self.button_manager.green_pin()
+    
+    def button_blue_pin(self):
+        return self.button_manager.blue_pin()
+    
+    def button_yellow_pin(self):
+        return self.button_manager.yellow_pin()
+    #endregion
 
     # housekeeping methods
     def deinit(self):

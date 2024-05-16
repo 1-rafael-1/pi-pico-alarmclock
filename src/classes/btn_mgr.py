@@ -61,6 +61,15 @@ class ButtonManager:
             return True
         return False
     
+    def green_pin(self):
+        return self.green_button.id
+    
+    def blue_pin(self):
+        return self.blue_button.id
+    
+    def yellow_pin(self):
+        return self.yellow_button.id
+    
     def deinit(self):
         self.disable_interrupts()
 
