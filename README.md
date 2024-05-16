@@ -38,7 +38,7 @@ That being said: This is going to be full of imperfections. Use any of this at Y
   + At the same time in the indicator area of the display we will show a random color as text, using the button colors. Pressing the appropriate button will proceed to show the next color, until one has pressed all three buttons in the order the device wanted them. Completing the sequence will abort the alarm at any stage. The assumption is: If You are awake enough to have found and pressed the buttons in the random order that You were presented, You should be awake enough to get out of bed.
   + At the actual alarm time the sunrise will becompleted and the NeoPixel will display some fancy lighshow-things. At the same time the Music starts tom play, in my case here I chose the Imperial March, because that is what the kids love.
 
-![Prototype on breadboard](wiring/prototype_breadboard.png)
+![Prototype on breadboard](wiring/prototype-breadboard.png)
 
 ## Code
 
