@@ -14,7 +14,9 @@ class NeoPixelManager:
         self.all_off()
 
     def start_update_analog_clock_timer(self):
-        if self.update_analog_clock_timer is None:   
+        if self.update_analog_clock_timer is None:
+           self.all_off()
+           self.analog_clock(brightness=0.01)
            self.update_analog_clock_timer = Timer(period=3750, mode=Timer.PERIODIC, callback=lambda t: self.analog_clock(brightness=0.01))
 
     def stop_update_analog_clock_timer(self):
@@ -23,6 +25,7 @@ class NeoPixelManager:
             print("Deinit update analog clock timer")
             self.update_analog_clock_timer.deinit()
             self.update_analog_clock_timer = None
+            self.all_off()
 
     @micropython.native
     def all_off(self):
