@@ -261,6 +261,11 @@ class StateManager:
         return self.button_manager.yellow_pin()
     #endregion
 
+    # region LowPowerManager methods
+    def lowpower_enter_lowpower_mode(self):
+        self.lowpower_manager.enter_lowpower_mode()
+    # endregion
+
     # housekeeping methods
     def deinit(self):
         self.time_manager.deinit()
