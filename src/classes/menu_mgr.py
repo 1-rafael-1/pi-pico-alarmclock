@@ -54,8 +54,12 @@ class MenuManager:
             return
 
     def toggle_alarm(self):
-        self.state_mgr.set_alarm_active(not self.state_mgr.alarm_active)
+        self.state_mgr.set_alarm_active(not self.state_mgr.is_alarm_active())
         self.state_mgr.display_state_region()
+        if self.state_mgr.is_alarm_active():
+            self.state_mgr.neopixel_stop_update_analog_clock_timer()
+        else:
+            self.state_mgr.neopixel_start_update_analog_clock_timer()
 
     def enter_menu(self):
         self.set_state('menu')

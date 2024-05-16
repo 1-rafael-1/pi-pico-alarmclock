@@ -41,11 +41,10 @@ class StateManager:
         self.display_manager.start_update_display_timer()
 
         self.neopixel_manager.initialize()
-        self.neopixel_manager.start_update_analog_clock_timer()
+        if not self.is_alarm_active():
+            self.neopixel_manager.start_update_analog_clock_timer()
 
         self.button_manager.initialize()
-
-        #self.sound_manager.initialize()
 
         self.alarm_manager.start_alarm_timer()
 
