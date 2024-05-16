@@ -1,6 +1,6 @@
 import drivers.lowpower as lowpower
 
-class LowPowerManager
+class LowPowerManager:
     def __init__(self, state_mgr):
         self.state_mgr = state_mgr
         green_pin=state_mgr.button_green_pin()
