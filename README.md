@@ -86,14 +86,14 @@ The central part of this project is the Raspberry Pi Pico W. I am sure everythin
 |battery holder|really anything will do, that can hold one Lithium-Polymer unit. Consider adding a switch between battery and charger or be as lazy as me and take out the battery whenever You want to truly power down.|
 |charger module|I used a TC4056A module, capable of drawing power from Micro-USB or input pads and capable to charge/discharge the above battery safely.|
 |NeoPixel ring|I used WS2812B with 16 RGB LED on it. If You want more LED make sure to check if You can power them safely. Each LED will draw ~60mA and that quickly exceeds either the 300mA the Pico can supply directly or what the step-up-converter attached to the USB or battery power supplies can deliver. In my case here the step-up-converter is rated for 1000mA and so this should be okay.|
-|step-up converter|A step up capable to convert 2.5V - 5V to steady 5V. Required to power the NeoPixel-Ring. I have used HW-085. There are a ton of these things available everywhere, make sure it is DC-DC and can put out 1000mA for 5V and can convert to that from whatever You expect to come out of Your power supply.|
+|step-up converter|A step up capable to convert 2.5V - 5V to steady 5V. I used BS01 (sometimes found as MT-3608 or HW-085). Required to power the NeoPixel-Ring. There are a ton of these things available everywhere, make sure it is DC-DC and can put out 1000mA for 5V and can convert to that from whatever You expect to come out of Your power supply.|
 |speaker|I have used DFplayer Mini 3 Watt 8 Ohm speaker, 70*30*15mm. They can be found in some flavors from multiple vendors. Depending on the form factor You may need to adjust the case, but I guess that cannot be helped since there are so many different of these speakers around.|
 |p-channel MOSFET|Two used to switch power modules. I have used IRF9540 which is overkill and and more efficient options exist. These things are rated for up to 100V and the switching voltage is uncomfortably close to USB typical ~5V. So, maybe they now have a higher voltage drop from source to drain, than I would like.|
 |n-channel MOSFET|One used to control power supply to mp3 module. I have used IRLZ44N.|
 |Schottky diode|One used to prevent power from flowing back into Pi Picos VBUS when powering from battery. Anything rated for up to 5V will do.|
 |mp3 module|I have used DFR0299 (DFPlayer), which was easy to wire. It has a micro-sd card slot and an internal amplifier, greatly reducing overall complexity compared to other solutions I found. Also unfortunately my last struggle left... not yet reliable.|
 |micro sd card|Really, anything You have lying around, formatted to FAT32.|
-|push button|Three used. They usually come without caps and I chose caps in three different colors.|
+|push button|Three used. 13mm diameter, 8mm hight caps on 12x12x7.3mm button - these should be fairly standard. One caps each in yellow, green and blue.|
 
 ### Wiring
 
@@ -108,6 +108,10 @@ A few things to note here:
 + The power circuit is strongly inspired by the Raspberry Pi Pico documentation. I use one p-channel-MOSFET to cut power from the battery supply, as long as VBUS is powered externally. This is achieved by running a wire from VBUS to the MOSFET gate (VBUS is directly connected to the Micro-USB of the Pico). The second p-channel-MOSFET is used in the same fashion to cut power from the battery to the NeoPixel, as long as VBUS is powered.
 + The NeoPixel needs 5V and so is either supplied from VBUS or from the battery via the step-up-converter. The wire from VBUS to the step-up-converter has a Schottky-diode to prevent power from backfeeding into VBUS when powered from the battery.
   
+### Enclosure and Assembly
+
+See [enclosure](/enclosure/README.md) for information on hoe to print and assemble.
+
 ### Power Consumption
 
 My observed battery life is around 36 hours from fully charged to the charger module switching everything off. This does seem a bit quick for my gut feeling, so I wanted to get a better idea if I have made a mistake somewhere or if I could reasonably expect to be able to tweak that somehow.
