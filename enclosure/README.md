@@ -43,14 +43,11 @@ This was my very first use of a CAD software, so be warned... that being said, t
 + For the speaker edit the sketch `right`
 + For the MicroUSB hole edit sketch `back`. You may want to change that to USB-C depending on the microcontroller used.
 + the sketch `left` is basically just a plain rectangle
-+ the sketch `bottom` is almost plain, besides the four pins to attach the bottom to the enclosure. Not the most ideal engineering solution, but works well enough for now.
-
++ the sketch `bottom` is almost plain, besides the four holes to attach the bottom to the enclosure. Should work with M2 screws 5-7mm long
+  
 ## 3D Printing
 
-The enclosure is designed to be 3D printed. The STL files for the bottom and the body of the enclosure can be found in the project repository:
-
-+ [Enclosure Body STL](enclosure-body.stl)
-+ [Enclosure Bottom STL](enclosure-bottom.stl)
+The enclosure is designed to be 3D printed. Since anybody will need to adjust sizes, change the name on the top li, etc. I am not including STL files here. Use Autodesk Fusion and the above Fusion Archive File and then export the parts to STL after modifying accordingly. Export the top lid together with the name body, the body and the bottom separately.
 
 In my case I found that between the slicer and the print I need to add 0.63% to the objects sizes. Calibrate that by printing a plain square and using calipers to find how much the result diverges from the design. This will be very different depending on the filament, the print temperature and probably also on the printer itself.
 
