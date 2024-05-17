@@ -10,7 +10,7 @@ def main():
         app.initialize()
         app.run()
     except Exception as e:
-        print("An unexpected error occurred: ", e)
+        print("An unexpected error occurred in main.py: ", e)
     except KeyboardInterrupt:
         pass
     finally:

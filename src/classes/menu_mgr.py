@@ -196,6 +196,14 @@ class MockStateManager:
     def alarm_clear_last_alarm_stopped_time(self):
         pass
 
+    def is_alarm_active(self):
+        return self.alarm_active
+    
+    def neopixel_stop_update_analog_clock_timer(self):
+        pass
+
+    def neopixel_start_update_analog_clock_timer(self):
+        pass
 
 ## Tests
 
