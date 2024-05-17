@@ -5,21 +5,29 @@ from classes.state_mgr import StateManager
 
 class ApplicationManager:
     def __init__(self):
-        self.state_manager = StateManager()
+        self.state_mgr = StateManager()
 
     @micropython.native
     def initialize(self):
         print("Initializing...")
-        self.state_manager.initialize()
+        self.state_mgr.initialize()
         print("Initialization complete")
 
     @micropython.native
     def run(self):
         try:
             print("Entering main loop...")
+            cntr = 0
             while True:
                 idle()    
                 sleep(.01)
+                cntr += 1
+                if cntr % 1000 == 0:
+                    print("Running...")
+                if cntr % 10000 == 0:
+                    cntr = 0
+                    print("Entering lowpower mode...")
+                    self.state_mgr.lowpower_enter_lowpower_mode()
         except KeyboardInterrupt:
             pass
         except Exception as e:
@@ -29,4 +37,4 @@ class ApplicationManager:
 
     def stop(self):
         print("Closing...")
-        self.state_manager.deinit()
+        self.state_mgr.deinit()

@@ -19,6 +19,18 @@
 			"reportMissingModuleSource": "none"
 		},
 		"micropico.syncFolder": "src",
+		"micropico.syncFileTypes": [
+			"py",
+			"txt",
+			"log",
+			"json",
+			"xml",
+			"html",
+			"js",
+			"css",
+			"mpy",
+			"pbm"
+		],
 		"micropico.openOnStart": true,
 		"python.analysis.typeshedPaths": [
 			"~\\.micropico-stubs\\included",

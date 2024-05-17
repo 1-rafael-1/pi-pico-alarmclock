@@ -11,6 +11,8 @@ class LowPowerManager:
     def enter_lowpower_mode(self):
         self.state_mgr.deinit()
         is_lowpower_mode = True
+        print("Entering lowpower mode...")
+        print(f"Pins are: {green_pin}, {blue_pin}, {yellow_pin}")
         lowpower.dormant_until_pins([green_pin, blue_pin, yellow_pin])
         is_lowpower_mode = False
         self.state_mgr.initialize()
