@@ -51,11 +51,6 @@ class WifiManager:
     def disconnect(self, max_wait=20, indicator=True):
         print("Disconnecting WLAN")
         wlan = WLAN(STA_IF)
-        # wlan.disconnect()
-        # while wlan.isconnected() and (max_wait > 0):
-        #     sleep(1)
-        #     max_wait -= 1
-        #     print(".", end="")
         if indicator:
             self.active_indicator(wlan)
         wlan.active(False)
@@ -94,3 +89,21 @@ def wifi_can_connect_and_disconnect():
     #[WHEN]: Disconnecting from the network
     wifi.disconnect()
     #[THEN]: The network is disconnected
+
+def wifi_can_connect_after_disconnected():
+    #[GIVEN]: A WifiManager instance
+    wifi = WifiManager()
+    #[WHEN]: Connecting to a network
+    wifi.connect()
+    #[THEN]: The network is connected
+    assert wifi.is_network_up() == True, "Network is not connected"
+    #[WHEN]: Disconnecting from the network
+    wifi.disconnect()
+    #[THEN]: The network is disconnected
+    assert wifi.is_network_up() == False, "Network is still connected"
+    #[WHEN]: Reconnecting to the network
+    wifi.reconnect()
+    #[THEN]: The network is connected
+    assert wifi.is_network_up() == True, "Network is not connected"
+    #[TEARDOWN]: Disconnecting from the network
+    wifi.disconnect()
