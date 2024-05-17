@@ -1,6 +1,6 @@
 import micropython
 from utime import sleep
-from machine import idle, freq, lightsleep
+from machine import idle
 from classes.state_mgr import StateManager
 
 class ApplicationManager:

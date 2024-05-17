@@ -51,14 +51,15 @@ class WifiManager:
     def disconnect(self, max_wait=20, indicator=True):
         print("Disconnecting WLAN")
         wlan = WLAN(STA_IF)
-        wlan.disconnect()
-        while wlan.isconnected() and (max_wait > 0):
-            sleep(1)
-            max_wait -= 1
-            print(".", end="")
+        # wlan.disconnect()
+        # while wlan.isconnected() and (max_wait > 0):
+        #     sleep(1)
+        #     max_wait -= 1
+        #     print(".", end="")
         if indicator:
             self.active_indicator(wlan)
         wlan.active(False)
+        wlan.deinit()
 
     @micropython.native
     def reconnect(self, max_wait=20):

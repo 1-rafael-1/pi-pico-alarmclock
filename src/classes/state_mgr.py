@@ -1,6 +1,7 @@
 import json
 import _thread
 from utime import sleep
+from machine import freq
 from classes.wifi_mgr import WifiManager
 from classes.neopixel_mgr import NeoPixelManager
 from classes.display_mgr import DisplayManager
@@ -95,6 +96,15 @@ class StateManager:
         data['alarm_active'] = self.alarm_active
         with open('settings//alarm.json', 'w') as file:
             json.dump(data, file)
+
+    def set_full_clock_speed(self):
+        freq(125000000)
+
+    def set_low_clock_speed(self):
+        freq(1000000)
+
+    def set_medium_clock_speed(self):
+        freq(60000000)
     # endregion
 
     # region PowerManager methods
