@@ -141,7 +141,6 @@ class AlarmManager:
         self.state_mgr.neopixel_all_off()
         self.state_mgr.sound_alarm_stop()
         self.alarm_sequence_sound_running = False
-        self.state_mgr.neopixel_start_update_analog_clock_timer()
         self.state_mgr.display_clear_first_row()
         self.state_mgr.menu_set_state('idle')
         self.state_mgr.display_compose()
