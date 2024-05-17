@@ -23,7 +23,7 @@ class ApplicationManager:
         except KeyboardInterrupt:
             pass
         except Exception as e:
-            print("An unexpected error occurred: ", e)
+            print("An unexpected error occurred in app_mgr.py: ", e)
         finally:
             print("Closing...")
 

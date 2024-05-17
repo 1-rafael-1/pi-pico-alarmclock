@@ -53,3 +53,15 @@ class PowerManager:
 
     def get_temperature(self):
         return self.temperature
+    
+## Tests
+
+def test_power_manager():
+    power = PowerManager()
+    power.read_vsys()
+    power.read_temperature()
+    print('Battery state:', power.get_battery_state())
+    print('Battery charge percentage:', power.get_battery_charge_percentage())
+    print('USB powered:', power.is_usb_powered())
+    print('Temperature:', power.get_temperature())
+    

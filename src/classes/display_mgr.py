@@ -270,6 +270,22 @@ class MockStateManager:
     def alarm_quit_button_sequence(self):
         return ['green', 'blue', 'yellow']
     
+    def menu_get_state(self):
+        if self.menu_active:
+            return 'system_info'
+        if self.alarm_active:
+            return 'alarm_raised'
+        return 'idle'
+    
+    def power_read_vsys(self):
+        pass
+
+    def power_is_usb_powered(self):
+        return False
+    
+    def power_get_battery_charge_percentage(self):
+        return 50
+    
 ## Tests
 def display_manager_composes():
     #[GIVEN]: DisplayManager instance

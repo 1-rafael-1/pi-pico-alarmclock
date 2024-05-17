@@ -4,9 +4,6 @@
 			"path": "."
 		},
 		{
-			"path": "src"
-		},
-		{
 			"name": "Pico (W) Remote Workspace",
 			"uri": "pico:"
 		}
