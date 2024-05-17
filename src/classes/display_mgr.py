@@ -13,7 +13,7 @@ class DisplayManager:
         self.state_mgr = state_mgr
         self.i2c = I2C(0, scl=Pin(13), sda=Pin(12)) 
         self.display = ssd1306.SSD1306_I2C(width, height, self.i2c)
-        self.display.contrast(50) # to save power, 255 is default
+        self.display.contrast(10) # to save power, 255 is default
         self.update_display_timer = None
         self.blinking_set_alarm_time = False
         self.blinking_set_alarm_time_timer = None
@@ -46,7 +46,7 @@ class DisplayManager:
     @micropython.native
     def blink_alarm_time(self):
         if self.blinking_set_alarm_time_showing:
-            self.hide_time()
+            self.clear_content_area()
             self.blinking_set_alarm_time_showing = False
         else:
             self.display_alarm_time()
@@ -60,7 +60,6 @@ class DisplayManager:
     @micropython.native
     def display_text(self, text, x=0, y=0):
         self.display.text(text, x, y)
-        self.display.show()
 
     def power_on(self):
         self.display.poweron()
@@ -129,8 +128,8 @@ class DisplayManager:
         self.display.show()
 
     @micropython.native
-    def hide_time(self):
-        self.display.fill_rect(13, 26, 128-13, 24, 0) # x start, y start, width, height
+    def clear_content_area(self):
+        self.display.fill_rect(0, 14, 128, 64-14, 0) # x start, y start, width, height        
         self.display.show()
 
     @micropython.native
@@ -152,8 +151,6 @@ class DisplayManager:
     def display_input_voltage(self):
         self.state_mgr.power_read_vsys()
         voltage = round(self.state_mgr.power_get_vsys_voltage(),2)
-        self.display.text(f'                ', 0, 17)
-        self.display.show()
         self.display_text(f'Vsys: {voltage}V', 0, 17)
         self.display.show()
 
@@ -161,8 +158,6 @@ class DisplayManager:
     def display_available_memory(self):
         collect()
         available_memory = mem_free() / 1024
-        self.display.text(f'                  ', 0, 33)
-        self.display.show()
         self.display.text(f'Mem. free: {available_memory} kb', 0, 33)
         self.display.show()
 
@@ -170,19 +165,38 @@ class DisplayManager:
     def display_board_temperature(self):
         self.state_mgr.power_read_temperature()
         temperature = self.state_mgr.power_get_temperature()
-        self.display.text(f'                    ', 0, 49)
-        self.display.show()
         self.display.text(f'B-Temp.: {temperature}C', 0, 49)
+        self.display.show()
+
+    @micropython.native
+    def display_system_select(self):
+        self.display.text('GREEN: shut down', 0, 17)
+        self.display.text('BLUE: info', 0, 33)
+        self.display.text('YELLOW: resume', 0, 49)
+        self.display.show()
+
+    @micropython.native
+    def display_shutdown(self):
+        self.display.text('Powering down...', 0, 33)
         self.display.show()
 
     @micropython.native
     def compose(self):
         if self.state_mgr.menu_get_state() in ['idle', 'alarm_raised']:
             self.display_time(self.get_time())
-        elif self.state_mgr.menu_get_state() == 'system_info':
-            self.display_input_voltage()
-            self.display_available_memory()
-            self.display_board_temperature()
+        elif self.state_mgr.menu_get_state() == 'system':
+            self.clear_content_area()
+            if self.state_mgr.menu_get_system_state() == 'select':
+                print("Displaying system select")
+                self.display_system_select()
+            elif self.state_mgr.menu_get_system_state() == 'info':
+                print("Displaying system info")
+                self.display_input_voltage()
+                self.display_available_memory()
+                self.display_board_temperature()
+            elif self.state_mgr.menu_get_system_state() == 'shutdown':
+                print("Displaying system shutdown")
+                self.display_shutdown()
         if not self.state_mgr.alarm_is_alarm_raised():
             self.display_battery_state()
             self.display_state_region()
@@ -199,7 +213,7 @@ class DisplayManager:
         self.clear_first_row()
         # Display the text from state_mgr.alarm_quit_button_sequence at the given index
         sequence_text = self.state_mgr.alarm_quit_button_sequence()[index]
-        self.display.text(sequence_text, 0, 0)  # Adjust the coordinates as needed
+        self.display.text(sequence_text, 0, 0)
         self.display.show()
 
     @micropython.native
@@ -221,6 +235,7 @@ class MockStateManager:
         self.menu_active = False
         self.setting_alarm_hours = False
         self.setting_alarm_minutes = False
+        self.menu_system_state = 'info'
 
     def get_time(self):
         return "12:00"
@@ -272,7 +287,7 @@ class MockStateManager:
     
     def menu_get_state(self):
         if self.menu_active:
-            return 'system_info'
+            return 'system'
         if self.alarm_active:
             return 'alarm_raised'
         return 'idle'
@@ -286,6 +301,18 @@ class MockStateManager:
     def power_get_battery_charge_percentage(self):
         return 50
     
+    def alarm_is_alarm_raised(self):
+        return False
+    
+    def power_get_vsys_voltage(self):
+        return 3.7
+    
+    def set_menu_system_state(self, state):
+        self.menu_system_state = state
+
+    def menu_get_system_state(self):
+        return self.menu_system_state
+
 ## Tests
 def display_manager_composes():
     #[GIVEN]: DisplayManager instance
@@ -365,5 +392,89 @@ def display_manager_displays_alarm_quit_sequence():
     display_mgr.display_alarm_quit_sequence(2)
     #[THEN]: DisplayManager displays alarm quit sequence successfully
     sleep(1)
+    #[TEARDOWN]
+    display_mgr.deinit()
+
+def display_manager_displays_shutdown_after_normal_display():
+    #[GIVEN]: DisplayManager instance
+    print("Test DisplayManager display shutdown")
+    state_mgr = MockStateManager()
+    display_mgr = DisplayManager(state_mgr)
+    #[GIVEN]: Menu system state is 'select', we are in menu state 'idle' 
+    state_mgr.set_menu_system_state('select')
+    state_mgr.set_menu_is_active(False)
+    #[WHEN]: DisplayManager composes
+    display_mgr.compose()
+    #[THEN]: DisplayManager composes successfully
+    sleep(1)
+    #[WHEN]: we have progressed to menu state 'system' and system state 'shutdown'
+    state_mgr.set_menu_system_state('shutdown')
+    state_mgr.set_menu_is_active(True)
+    #[WHEN]: DisplayManager displays shutdown message
+    display_mgr.compose()
+    display_mgr.display_shutdown()
+    #[THEN]: DisplayManager displays shutdown message successfully
+    sleep(1)
+    #[TEARDOWN]
+    display_mgr.deinit()
+
+def display_manager_displays_system_select():
+    #[GIVEN]: DisplayManager instance
+    print("Test DisplayManager display system select")
+    state_mgr = MockStateManager()
+    display_mgr = DisplayManager(state_mgr)
+    #[GIVEN]: Menu system state is 'select', we are in menu state 'idle' 
+    state_mgr.set_menu_system_state('select')
+    state_mgr.set_menu_is_active(False)
+    #[WHEN]: DisplayManager composes
+    display_mgr.compose()
+    #[THEN]: DisplayManager composes successfully
+    sleep(1)
+    #[WHEN]: we have progressed to menu state 'system' and system state 'select'
+    state_mgr.set_menu_system_state('select')
+    state_mgr.set_menu_is_active(True)
+    #[WHEN]: DisplayManager composes
+    display_mgr.compose()
+    #[THEN]: DisplayManager composes successfully
+    sleep(3)
+    #[TEARDOWN]
+    display_mgr.deinit()
+
+def display_iterate_contrast():
+    #[GIVEN]: DisplayManager instance
+    print("Test DisplayManager iterate contrast")
+    state_mgr = MockStateManager()
+    display_mgr = DisplayManager(state_mgr)
+    #[WHEN]: DisplayManager iterates contrast
+    for i in range(0, 255, 10):
+        display_mgr.display.contrast(i)
+        display_mgr.compose()
+        sleep(1)
+        print("Contrast: ", i)
+    #[THEN]: DisplayManager iterates contrast successfully
+    #[TEARDOWN]
+    display_mgr.deinit()
+
+def display_clears_content_area():
+    #[GIVEN]: DisplayManager instance
+    print("Test DisplayManager clear content area")
+    state_mgr = MockStateManager()
+    display_mgr = DisplayManager(state_mgr)
+    #[WHEN]: 4 lines of text are displayed
+    display_mgr.display_text('Line 1', 0, 0)
+    display_mgr.display_text('Line 2', 0, 16)
+    display_mgr.display_text('Line 3', 0, 32)
+    display_mgr.display_text('Line 4', 0, 48)
+    display_mgr.display.show()
+    #[THEN]: 4 lines of text are displayed successfully
+    sleep(3)
+    #[WHEN]: DisplayManager clears first row
+    display_mgr.clear_first_row()
+    #[THEN]: DisplayManager clears first row successfully
+    sleep(3)
+    #[WHEN]: DisplayManager clears content area
+    display_mgr.clear_content_area()
+    #[THEN]: DisplayManager clears content area successfully
+    sleep(3)
     #[TEARDOWN]
     display_mgr.deinit()

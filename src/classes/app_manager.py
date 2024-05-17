@@ -23,6 +23,11 @@ class ApplicationManager:
                     lightsleep(1000)
                 else:
                     sleep(.01)
+                
+                if self.state_mgr.menu_get_system_state() == "shutdown":
+                    self.state_mgr.display_compose()
+                    sleep(2)
+                    self.state_mgr.lowpower_enter_lowpower_mode()
         except KeyboardInterrupt:
             pass
         except Exception as e:
