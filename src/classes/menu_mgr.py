@@ -58,9 +58,7 @@ class MenuManager:
         self.state_mgr.display_state_region()
         if self.state_mgr.is_alarm_active():
             self.state_mgr.neopixel_stop_update_analog_clock_timer()
-            self.state_mgr.set_medium_clock_speed()
         else:
-            self.state_mgr.set_high_clock_speed()
             self.state_mgr.neopixel_start_update_analog_clock_timer()
 
     def enter_menu(self):

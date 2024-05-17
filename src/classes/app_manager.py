@@ -1,6 +1,6 @@
 import micropython
 from utime import sleep
-from machine import idle
+from machine import idle, lightsleep
 from classes.state_mgr import StateManager
 
 class ApplicationManager:
@@ -17,17 +17,12 @@ class ApplicationManager:
     def run(self):
         try:
             print("Entering main loop...")
-            cntr = 0
             while True:
-                idle()    
-                sleep(.01)
-                cntr += 1
-                if cntr % 1000 == 0:
-                    print("Running...")
-                if cntr % 10000 == 0:
-                    cntr = 0
-                    print("Entering lowpower mode...")
-                    self.state_mgr.lowpower_enter_lowpower_mode()
+                idle()
+                if self.state_mgr.lowpower_is_lowpower_mode_active():
+                    lightsleep(1000)
+                else:
+                    sleep(.01)
         except KeyboardInterrupt:
             pass
         except Exception as e:

@@ -122,7 +122,6 @@ class AlarmManager:
 
     @micropython.native
     def raise_alarm(self):
-        self.state_mgr.set_full_clock_speed()
         self.clear_last_alarm_stopped_time()
         self.randomize_quit_button_sequenze()
         self.state_mgr.alarm_set_alarm_raised(True)
@@ -146,7 +145,6 @@ class AlarmManager:
         self.state_mgr.display_clear_first_row()
         self.state_mgr.menu_set_state('idle')
         self.state_mgr.display_compose()
-        self.state_mgr.set_medium_clock_speed()
         
     def deinit(self):
         self.stop_alarm_timer()
