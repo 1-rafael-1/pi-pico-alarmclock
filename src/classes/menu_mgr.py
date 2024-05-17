@@ -1,10 +1,14 @@
 class MenuManager:
     def __init__(self, state_mgr):
-        self.state = 'idle'  # Possible states: 'idle', 'menu', 'alarm_raised', 'system_info'
+        self.state = 'idle'  # Possible states: 'idle', 'menu', 'alarm_raised', 'system'
         # 'idle' - normal operation
         # 'menu' - alarm setting mode; was intended to be used for other settings as well, not yet implemented
         # 'alarm_raised' - alarm is ringing
-        # 'system_info' - system information
+        # 'system' - system information
+        self.system_state = 'select' # Possible states: 'select', 'info', 'shutdown'
+        # 'select' - select either 'info' or 'shutdown'
+        # 'info' - display system information
+        # 'shutdown' - power down the system
         self.state_mgr = state_mgr
 
     def set_state(self, state):
@@ -12,6 +16,12 @@ class MenuManager:
 
     def get_state(self):
         return self.state
+    
+    def set_system_state(self, state):
+        self.system_state = state
+
+    def get_system_state(self):
+        return self.system_state
 
     def press_green_button(self):
         if self.state == 'idle':
@@ -23,8 +33,10 @@ class MenuManager:
         elif self.state == 'alarm_raised':
             self.attempt_to_quit_alarm('green')
             return
-        elif self.state == 'system_info':
-            return
+        elif self.state == 'system':
+            if self.system_state == 'select':
+                self.set_system_state('shutdown')
+                return
 
     def press_blue_button(self):
         if self.state == 'idle':
@@ -36,21 +48,23 @@ class MenuManager:
         elif self.state == 'alarm_raised':
             self.attempt_to_quit_alarm('blue')
             return
-        elif self.state == 'system_info':
-            return
+        elif self.state == 'system':
+            if self.system_state == 'select':
+                self.set_system_state('info')
+                self.state_mgr.display_compose()
 
     def press_yellow_button(self):
         if self.state == 'menu':
             self.increase_alarm_minute()
             return
         elif self.state == 'idle':
-            self.enter_system_info()
+            self.enter_system()
             return
         elif self.state == 'alarm_raised':
             self.attempt_to_quit_alarm('yellow')
             return
-        elif self.state == 'system_info':
-            self.exit_system_info()
+        elif self.state == 'system':
+            self.exit_system()
             return
 
     def toggle_alarm(self):
@@ -107,14 +121,16 @@ class MenuManager:
         else:
             self.state_mgr.alarm_quit_alarm()
 
-    def enter_system_info(self):
-        self.set_state('system_info')
+    def enter_system(self):
+        self.set_state('system')
+        self.set_system_state('select')
         self.state_mgr.set_menu_is_active(True)
         self.state_mgr.display_clear()
         self.state_mgr.display_compose()
 
-    def exit_system_info(self):
+    def exit_system(self):
         self.set_state('idle')
+        self.set_system_state('select')
         self.state_mgr.set_menu_is_active(False)
         self.state_mgr.display_clear()
         self.state_mgr.display_compose()
@@ -264,29 +280,29 @@ def alarm_quit_sequence_can_be_interrupted():
     #[TEARDOWN]:
     menu_mgr.deinit()
 
-def system_info_can_be_entered_and_exited():
+def system_can_be_entered_and_exited():
     #[GIVEN]: A menu manager
     state_mgr = MockStateManager()
     menu_mgr = MenuManager(state_mgr)
     #[WHEN]: The system info is entered
-    menu_mgr.enter_system_info()
-    #[THEN]: The state is 'system_info'
-    assert menu_mgr.state == 'system_info', "State is not 'system_info'"
+    menu_mgr.enter_system()
+    #[THEN]: The state is 'system'
+    assert menu_mgr.state == 'system', "State is not 'system'"
     #[WHEN]: The system info is exited
-    menu_mgr.exit_system_info()
+    menu_mgr.exit_system()
     #[THEN]: The state is 'idle'
     assert menu_mgr.state == 'idle', "State is not 'idle'"
     #[TEARDOWN]:
     menu_mgr.deinit()
 
-def pressing_yellow_button_enters_and_exits_system_info():
+def pressing_yellow_button_enters_and_exits_system():
     #[GIVEN]: A menu manager
     state_mgr = MockStateManager()
     menu_mgr = MenuManager(state_mgr)
     #[WHEN]: The yellow button is pressed
     menu_mgr.press_yellow_button()
-    #[THEN]: The state is 'system_info'
-    assert menu_mgr.state == 'system_info', "State is not 'system_info'"
+    #[THEN]: The state is 'system'
+    assert menu_mgr.state == 'system', "State is not 'system'"
     #[WHEN]: The yellow button is pressed again
     menu_mgr.press_yellow_button()
     #[THEN]: The state is 'idle'

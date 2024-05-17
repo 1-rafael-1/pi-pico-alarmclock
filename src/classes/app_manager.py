@@ -1,16 +1,16 @@
 import micropython
 from utime import sleep
-from machine import idle, freq, lightsleep
+from machine import idle, lightsleep
 from classes.state_mgr import StateManager
 
 class ApplicationManager:
     def __init__(self):
-        self.state_manager = StateManager()
+        self.state_mgr = StateManager()
 
     @micropython.native
     def initialize(self):
         print("Initializing...")
-        self.state_manager.initialize()
+        self.state_mgr.initialize()
         print("Initialization complete")
 
     @micropython.native
@@ -18,8 +18,16 @@ class ApplicationManager:
         try:
             print("Entering main loop...")
             while True:
-                idle()    
-                sleep(.01)
+                idle()
+                if self.state_mgr.lowpower_is_lowpower_mode_active():
+                    lightsleep(1000)
+                else:
+                    sleep(.01)
+                
+                if self.state_mgr.menu_get_system_state() == "shutdown":
+                    self.state_mgr.display_compose()
+                    sleep(2)
+                    self.state_mgr.lowpower_enter_lowpower_mode()
         except KeyboardInterrupt:
             pass
         except Exception as e:
@@ -29,4 +37,4 @@ class ApplicationManager:
 
     def stop(self):
         print("Closing...")
-        self.state_manager.deinit()
+        self.state_mgr.deinit()

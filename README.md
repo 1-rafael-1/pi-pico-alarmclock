@@ -114,9 +114,7 @@ See [enclosure](/enclosure/README.md) for information on hoe to print and assemb
 
 ### Power Consumption
 
-My observed battery life is around 36 hours from fully charged to the charger module switching everything off. This does seem a bit quick for my gut feeling, so I wanted to get a better idea if I have made a mistake somewhere or if I could reasonably expect to be able to tweak that somehow.
-
-These are the assumptions I made regarding power consumption. I did not measure any of these but researched online to arrive at some idea. In general my calculation based on these assumptions matches what I can observe. So for the time being, 36h is my battery life.
+These are the assumptions I made regarding power consumption. I did not measure any of these but researched online to arrive at some idea. In general my calculation based on these assumptions matches what I can observe.
 
 |Component|Current (mA)|Current (Ah)|
 |:--|:--|:--|
@@ -125,24 +123,20 @@ These are the assumptions I made regarding power consumption. I did not measure 
 |NeoPixel|18.00|0.018|
 |all Wires, Diodes, MOSFET|8.00|0.0080|
 |Step-up-converter loss|4.30|0.0043|
-|DRF0299|15.00|0.015|
+
+The DRF0299 mp3-module is powered down the entire time, until it needs to play the alarm sound. After that it is powered down again. I am not inclufing it in the above table. In the specs it is rated for 20mA when powered.
+
+The NeoPixel is only active when the alarm is not active and of course during alarm. I put it into the table, as a worst-case scenario where it is never switched off.
 
 The hardest part to put a number on is the Pi Pico itself. Online sources say that under full load it consumes a fraction under .1Ah but then I do not put it under very much load here. On the other hand we also never not use the Pico, there is at least one timer firing every 3.7s to drive the analog clock. I am also still unsure if the main loop iterating over `sleep`n and then `idle` is really the best way to keep the application alive, power-wise. Anyway, I guessed .04Ah for constantly doing stuff but not doing very heavy calculations.
 
 For the OLED I found sources where people measured power consumption of similar devices and from one diagram I found I took the .011Ah. For the NeoPixel I found in the specs that one uses 60mA on full power. The analog clock running most of the time has three LEDs on at 10% brightness, so that should be .018Ah. For all the wires and MOSFET and the diode I basically asked ChatGPT for typical loss and got a fairly believable answer, broken down into a number of assumptions. Best I have, so that would be .0085Ah. The step-up converter actually has an efficiency in the specs and that could be used to calculate the power loss with some accuracy, but in my case here the step-up will either be used to convert from ~5V to 5 or if the battery is powering the battery will be at a voltage somewhere between 2.5V and 4V... so the conversion required will differ all the time. So I assume we will be on 3.5V input on average and to be safe I assume on average 90% efficiency and that ends us at .0043Ah.
 
-The DRF0299 says ~15mA in the specs, so .015Ah in the calculation. Like with the NeoPixel, most of the time it does very little and I did not try and calculate what power consumption is like when playing music and driving the speaker, which must be a lot more.
+So here is what I did to reduce power consumption:
 
-Now... does that serve any purpose?
++ **Pico**: The microcontroller is the most power-hungry component by a long shot. The only reason we need it doing things frequently is the seconds hand on the analog clock. I reduced clock speed to 80Mhz in normal operation, when the NeoPixel is not needed. Unfortunately one has to use the full frequency if the NeoPixel is used, because it is driven by state machines and they in turn cycle with the clock -> anything else than 125Mhz throws the timing off balance and the Neopixel will show weird things. I tried to go lower than 80Mhz, but then the OLED Display starts acting strangely.
++ **OLED**: Is not needed at full brightness and should use less power when dimmed. For now I have set contrast to 10 (maximum is 255), that is bright enough.
++ I managed to cut the power to DFPlayer while not used - actually when troubleshooting it not returning from sleep and requiring a fair bit of additional wiring.
++ I managed to cut power to Wifi while not used - also actually when trobleshooting it not being capable of reconnecting properly.
 
-I observed roughly 36h of battery life. My LiPo rechargeable battery has 3350mA, so 3.35Ah. When dividing that by the sum of my consumers (.0918Ah) I arrive at 36.49237 hours of battery life that I would calculate. So I am, with a degree of uncertainty, sure I am understanding where power is consumed. The most volatile component seems to be the Pico itself.
-
-So here is what I tried or planned to do in order to optimize power consumption:
-
-+ **Pico**: The microcontroller is the most power-hungry component by a long shot. The only reason we need it doing things frequently is the seconds hand on the analog clock.
-  + So I fiddled with `lightsleep()` to see if I could achieve the same functionality. This did not work for me. I may have gotten something wrong, but the way it looks the device does not wake up from timers and could wake up from interrupts, but even then not a rising or falling Pin, but a high or low pin. Beyond my expertise at this point to make use of, if there even is a way.
-  + Underclocking the Pico is easy and will reduce power consumption. As we are not doing any heavy lifting in this project, we surely do not need the full clock speed. I found that mostly everything works even of half the frequency, even if feeling a little sluggish at startup and when using the buttons to set alarm time. Unfortunately the NeoPixel Ring stops working even when reducing the frequency moderately. It kind of still lights up and kind of inspired by what I coded... but sometimes it was an LED too much, too little, not the color I wanted, not the position I wanted. Very odd, but that for now is the end of reducing clock speed for me.
-    + UPDATE: I think I understand now, why the NeoPixel does not work when underclocking. The implementation uses the programmable state machines of the RP2040 chip. Those obviously also clock slower, when underclocking the chip. The NeoPixel needs its signals timed very precisely to know specifically WHAT to light up. And this very timing is derailed, when the clock speed is reduced. To make this work, I would need to make a copy of the NeoPixel implementation (assembly code embedded into MicroPython) and figure out how to tinker this into working on a defined lower clock speed. This is beyond my ability for now.
-+ **OLED**: Is not needed at full brightness and should use less power when dimmed. Unfortunately no amount of tinkering with the driver got me a visible effect, so this is probably a dead end, too.
-+ **system loss**: When finally taking things out of the breadboard and soldering I will make sure to make wires as short as they can reasonably be, solder the gate pins of both MOSFET together, maybe buy more appropriate MOSFET ... cut the legs of the diode to solder as close to the thing as possible. And generally see to good connections without solder wire blobs. Nothing that I expect to change the overall result much.
-+ UPDATE: During troubleshooting an issue with the DFPlayer I was forced to introduce a way to switch power for this module in order to make it work. As a bonus we can now keep it powerded down for most of the time, saving 15mA and theoretically this should extend battery life to >41h.
+So... before all that I observed ~36h of battery life. I am curious if I now can do better.

@@ -1,6 +1,7 @@
 import json
 import _thread
 from utime import sleep
+from machine import freq
 from classes.wifi_mgr import WifiManager
 from classes.neopixel_mgr import NeoPixelManager
 from classes.display_mgr import DisplayManager
@@ -10,18 +11,23 @@ from classes.btn_mgr import ButtonManager
 from classes.menu_mgr import MenuManager
 from classes.power_mgr import PowerManager
 from classes.alarm_mgr import AlarmManager
+from classes.lowpower_mgr import LowPowerManager
 
 class StateManager:
     def __init__(self):
+        self.button_green_pin = 20
+        self.button_blue_pin = 21
+        self.button_yellow_pin = 22
         self.power_manager = PowerManager()
         self.wifi_manager = WifiManager()
         self.time_manager = TimeManager(self)
         self.neopixel_manager = NeoPixelManager(self)
         self.display_manager = DisplayManager(self)
         self.menu_manager = MenuManager(self)
-        self.button_manager = ButtonManager(self)
+        self.button_manager = ButtonManager(self, green_pin=self.button_green_pin, blue_pin=self.button_blue_pin, yellow_pin=self.button_yellow_pin)
         self.sound_manager = SoundManager(self)
         self.alarm_manager = AlarmManager(self)
+        self.lowpower_manager = LowPowerManager(self, green_pin=self.button_green_pin, blue_pin=self.button_blue_pin, yellow_pin=self.button_yellow_pin)
         self.alarm_active = False
         self.menu_active = False
         self.alarm_time = '{:02d}:{:02d}'.format(0,0)
@@ -29,6 +35,8 @@ class StateManager:
         self.lock = _thread.allocate_lock()
 
     def initialize(self):
+        self.set_full_clock_speed()
+
         self.power_manager.initialize()
 
         self.time_manager.initialize()
@@ -43,6 +51,8 @@ class StateManager:
         self.neopixel_manager.initialize()
         if not self.is_alarm_active():
             self.neopixel_manager.start_update_analog_clock_timer()
+        else:
+            self.set_reduced_clock_speed()
 
         self.button_manager.initialize()
 
@@ -93,6 +103,21 @@ class StateManager:
         data['alarm_active'] = self.alarm_active
         with open('settings//alarm.json', 'w') as file:
             json.dump(data, file)
+
+    def set_full_clock_speed(self):
+        freq(125000000) # 125 MHz, default clock speed for RP2040
+        sleep(1) # wait for clock speed to stabilize
+        print(f"Clock speed set to: {freq()}")
+
+    def set_reduced_clock_speed(self):
+        freq(80000000)
+        sleep(1) # wait for clock speed to stabilize
+        print(f"Clock speed set to: {freq()}")
+
+    def set_low_clock_speed(self):
+        freq(20000000) # 20 MHz, lowest clock speed for RP2040
+        sleep(1) # wait for clock speed to stabilize
+        print(f"Clock speed set to: {freq()}")
     # endregion
 
     # region PowerManager methods
@@ -147,6 +172,9 @@ class StateManager:
 
     def menu_get_state(self):
         return self.menu_manager.get_state()
+    
+    def menu_get_system_state(self):
+        return self.menu_manager.get_system_state()
     # endregion
 
     # region DisplayManager methods
@@ -248,15 +276,44 @@ class StateManager:
         self.sound_manager.alarm_stop()
     # endregion
 
+    # region LowPowerManager methods
+    def lowpower_enter_lowpower_mode(self):
+        self.lowpower_manager.enter_lowpower_mode()
+
+    def lowpower_is_lowpower_mode_active(self):
+        return self.lowpower_manager.is_lowpower_mode_active()
+    # endregion
+
     # housekeeping methods
     def deinit(self):
-        self.time_manager.deinit()
-        self.wifi_manager.deinit()
-        self.display_manager.deinit()
-        self.alarm_manager.deinit()
-        self.neopixel_manager.deinit()
-        self.button_manager.deinit()
-        self.sound_manager.deinit()
+        try:
+            self.time_manager.deinit()
+        except:
+            pass
+        try:
+            self.wifi_manager.deinit()
+        except:
+            pass
+        try:
+            self.display_manager.deinit()
+        except:
+            pass
+        try:
+            self.alarm_manager.deinit()
+        except:
+            pass
+        try:
+            self.neopixel_manager.deinit()
+        except:
+            pass
+        try:
+            self.button_manager.deinit()
+        except:
+            pass
+        try:
+            self.sound_manager.deinit()
+        except:
+            pass
 
 ## Tests
 
