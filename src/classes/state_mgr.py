@@ -51,8 +51,6 @@ class StateManager:
         self.neopixel_manager.initialize()
         if not self.is_alarm_active():
             self.neopixel_manager.start_update_analog_clock_timer()
-        else:
-            self.set_reduced_clock_speed()
 
         self.button_manager.initialize()
 
@@ -106,11 +104,6 @@ class StateManager:
 
     def set_full_clock_speed(self):
         freq(125000000) # 125 MHz, default clock speed for RP2040
-        sleep(1) # wait for clock speed to stabilize
-        print(f"Clock speed set to: {freq()}")
-
-    def set_reduced_clock_speed(self):
-        freq(80000000)
         sleep(1) # wait for clock speed to stabilize
         print(f"Clock speed set to: {freq()}")
 
