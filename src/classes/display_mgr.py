@@ -18,9 +18,14 @@ class DisplayManager:
         self.blinking_set_alarm_time = False
         self.blinking_set_alarm_time_timer = None
         self.blinking_set_alarm_time_showing = False
+        self.boot_messages = []
+
         
     def initialize(self):
         self.power_on()
+
+    def initialize_normal_operation(self):
+        self.clear()
         self.compose()
 
     def start_update_display_timer(self):
@@ -200,6 +205,18 @@ class DisplayManager:
         if not self.state_mgr.alarm_is_alarm_raised():
             self.display_battery_state()
             self.display_state_region()
+
+    @micropython.native
+    def compose_boot(self, message):
+        self.clear()
+        self.display_text('Booting...', 0, 0)
+        
+        self.boot_messages.append(message)
+    
+        for i, message in enumerate(self.boot_messages[-3:], start=1):
+            self.display_text(message, 0, i*16)
+    
+        self.display.show()
 
     @micropython.native
     def display_alarm_time(self):
@@ -475,6 +492,20 @@ def display_clears_content_area():
     #[WHEN]: DisplayManager clears content area
     display_mgr.clear_content_area()
     #[THEN]: DisplayManager clears content area successfully
+    sleep(3)
+    #[TEARDOWN]
+    display_mgr.deinit()
+
+def display_composes_boot():
+    #[GIVEN]: DisplayManager instance
+    print("Test DisplayManager compose boot")
+    state_mgr = MockStateManager()
+    display_mgr = DisplayManager(state_mgr)
+    #[WHEN]: DisplayManager composes boot
+    for i in range(1, 7):
+        display_mgr.compose_boot(f'Message {i}')
+        sleep(1)
+    #[THEN]: DisplayManager composes boot successfully
     sleep(3)
     #[TEARDOWN]
     display_mgr.deinit()
