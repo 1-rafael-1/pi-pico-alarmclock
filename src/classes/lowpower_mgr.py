@@ -12,6 +12,8 @@ class LowPowerManager:
         print("Entering lowpower mode...")
         print(f"pins are: {self.green_pin}, {self.blue_pin}, {self.yellow_pin}")
         self.is_lowpower_mode = True
+        self.state_mgr.menu_set_state("idle")
+        self.state_mgr.menu_set_system_state("select")   
         self.state_mgr.deinit()
         sleep(1)
         self.init_buttons()

@@ -37,24 +37,34 @@ class StateManager:
     def initialize(self):
         self.set_full_clock_speed()
 
+        self.display_manager.initialize()
+        self.display_manager.compose_boot('')
+
+        self.display_manager.compose_boot('power mgr')
         self.power_manager.initialize()
 
+        self.display_manager.compose_boot('wifi + rtc')
         self.time_manager.initialize()
         self.time_manager.start_update_rtc_timer()
 
+        self.display_manager.compose_boot('read config')
         self.read_alarm_time()
         self.read_alarm_active()
 
-        self.display_manager.initialize()
-        self.display_manager.start_update_display_timer()
-
+        self.display_manager.compose_boot('neopixel')
         self.neopixel_manager.initialize()
         if not self.is_alarm_active():
             self.neopixel_manager.start_update_analog_clock_timer()
 
+        self.display_manager.compose_boot('button mgr')
         self.button_manager.initialize()
 
+        self.display_manager.compose_boot('alarm mgr')
         self.alarm_manager.start_alarm_timer()
+        
+        self.display_manager.compose_boot('normal op')
+        self.display_manager.initialize_normal_operation()
+        self.display_manager.start_update_display_timer()
 
     # region global state methods
     def set_alarm_active(self, value):
@@ -165,6 +175,9 @@ class StateManager:
 
     def menu_get_state(self):
         return self.menu_manager.get_state()
+    
+    def menu_set_system_state(self, state):
+        self.menu_manager.set_system_state(state)
     
     def menu_get_system_state(self):
         return self.menu_manager.get_system_state()
