@@ -11,6 +11,10 @@ class MenuManager:
         # 'shutdown' - power down the system
         self.state_mgr = state_mgr
 
+    def initialize(self):
+        self.set_state('idle')
+        self.set_system_state('select')
+
     def set_state(self, state):
         self.state = state
 
@@ -79,7 +83,6 @@ class MenuManager:
         self.set_state('menu')
         self.state_mgr.display_stop_update_display_timer()
         self.state_mgr.alarm_stop_alarm_timer()
-        self.state_mgr.set_menu_is_active(True)
         self.state_mgr.display_state_region()
         self.state_mgr.read_alarm_time()
         self.state_mgr.display_time(self.state_mgr.get_alarm_time())
@@ -87,10 +90,10 @@ class MenuManager:
 
     def exit_menu(self):
         self.set_state('idle')
+        self.set_system_state('select')
         self.state_mgr.display_stop_blinking_set_alarm_time()
         self.state_mgr.write_alarm_time()
         self.state_mgr.alarm_clear_last_alarm_stopped_time()
-        self.state_mgr.set_menu_is_active(False)
         self.state_mgr.display_state_region()
         self.state_mgr.display_compose()
         self.state_mgr.display_start_update_display_timer()
@@ -124,14 +127,12 @@ class MenuManager:
     def enter_system(self):
         self.set_state('system')
         self.set_system_state('select')
-        self.state_mgr.set_menu_is_active(True)
         self.state_mgr.display_clear()
         self.state_mgr.display_compose()
 
     def exit_system(self):
         self.set_state('idle')
         self.set_system_state('select')
-        self.state_mgr.set_menu_is_active(False)
         self.state_mgr.display_clear()
         self.state_mgr.display_compose()
         

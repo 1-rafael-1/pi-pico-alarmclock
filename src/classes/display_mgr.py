@@ -139,7 +139,7 @@ class DisplayManager:
 
     @micropython.native
     def display_state_region(self):
-        if self.state_mgr.menu_active: #menu beats alarm
+        if self.state_mgr.is_menu_active(): #menu beats alarm
             file = 'media/settings.pbm'
             data = self.load_image(file)
         elif self.state_mgr.alarm_active: #alarm beats idle

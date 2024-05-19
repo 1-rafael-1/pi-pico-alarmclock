@@ -29,7 +29,6 @@ class StateManager:
         self.alarm_manager = AlarmManager(self)
         self.lowpower_manager = LowPowerManager(self, green_pin=self.button_green_pin, blue_pin=self.button_blue_pin, yellow_pin=self.button_yellow_pin)
         self.alarm_active = False
-        self.menu_active = False
         self.alarm_time = '{:02d}:{:02d}'.format(0,0)
         self.alarm_raised = False
         self.lock = _thread.allocate_lock()
@@ -39,6 +38,8 @@ class StateManager:
 
         self.display_manager.initialize()
         self.display_manager.compose_boot('')
+
+        self.menu_manager.initialize()
 
         self.display_manager.compose_boot('power mgr')
         self.power_manager.initialize()
@@ -74,12 +75,9 @@ class StateManager:
 
     def is_alarm_active(self):
         return self.alarm_active
-    
-    def set_menu_is_active(self, value):
-        self.menu_active = value
 
     def is_menu_active(self):
-        return self.menu_active
+        return self.menu_manager.get_state() in ['system','menu']
     
     def set_alarm_time(self, time):
         self.alarm_time = time
