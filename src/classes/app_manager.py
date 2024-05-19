@@ -16,14 +16,15 @@ class ApplicationManager:
     @micropython.native
     def run(self):
         try:
-            print("Entering main loop...")
+            print("app_mgr: Entering main loop...")
             while True:
                 idle()
-                if self.state_mgr.lowpower_is_lowpower_mode_active():
-                    lightsleep(1000)
-                else:
-                    sleep(.01)
                 
+                if self.state_mgr.lowpower_is_lowpower_mode_active():
+                    sleep(10)
+                else:
+                    sleep(.02)
+        
                 if self.state_mgr.menu_get_system_state() == "shutdown":
                     self.state_mgr.display_compose()
                     sleep(2)
