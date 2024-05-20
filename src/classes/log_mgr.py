@@ -58,7 +58,7 @@ class LogManager:
         # Get the current time as a tuple
         now = utime.localtime()
         # Format the time as a string
-        timestamp = '{}-{:02d}-{:02d}-{:02d}-{:02d}-{:02d}-{:06d}'.format(now[0], now[1], now[2], now[3], now[4], now[5])
+        timestamp = '{}-{:02d}-{:02d}-{:02d}-{:02d}-{:02d}'.format(now[0], now[1], now[2], now[3], now[4], now[5])
         # Create the log entry
         log_entry = '{}: {}: {}'.format(timestamp, source_class, message)
         # If verbose is True, print the log entry
