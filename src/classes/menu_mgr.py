@@ -16,12 +16,14 @@ class MenuManager:
         self.set_system_state('select')
 
     def set_state(self, state):
+        self.state_mgr.log_emit("Setting state to " + state, self.__class__.__name__)
         self.state = state
 
     def get_state(self):
         return self.state
     
     def set_system_state(self, state):
+        self.state_mgr.log_emit("Setting system state to " + state, self.__class__.__name__)
         self.system_state = state
 
     def get_system_state(self):

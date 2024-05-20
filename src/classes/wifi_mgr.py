@@ -8,7 +8,8 @@ from network import WLAN, STA_IF
 import usocket
 
 class WifiManager:
-    def __init__(self):
+    def __init__(self, state_mgr):
+        self.state_mgr = state_mgr
         self.indicator = Pin("LED", Pin.OUT)
 
     @micropython.native
@@ -20,7 +21,7 @@ class WifiManager:
                 password = data["password"]
             return ssid, password
         except Exception as e:
-            raise Exception("The settings/wifi.json file was not found. Please ensure it exists and is in the correct location.")
+            self.state_mgr.emit("The settings/wifi.json file was not found. Please ensure it exists and is in the correct location.", self.__class__.__name__)
 
     @micropython.native
     def active_indicator(self, wlan):
@@ -34,22 +35,22 @@ class WifiManager:
         wlan = WLAN(STA_IF)
         wlan.active(True)
         ssid, password = self.secrets()
-        print("Connecting to WiFi: ", ssid)
+        self.state_mgr.log_emit("Connecting to WiFi: " + ssid, self.__class__.__name__)
         wlan.connect(ssid, password)
-        print("Waiting for WLAN connection to succeed")
+        self.state_mgr.log_emit("Waiting for WLAN connection to succeed", self.__class__.__name__)
         while not wlan.isconnected() and max_wait > 0:
             sleep(1)
             max_wait -= 1
-            print(".", end="")
+            self.state_mgr.log_emit(".", self.__class__.__name__)
         if not wlan.isconnected():
-            print("WLAN connection failed")
+            self.state_mgr.log_emit("WLAN connection failed", self.__class__.__name__)
         if indicator:
             self.active_indicator(wlan)
         return wlan
 
     @micropython.native
     def disconnect(self, max_wait=20, indicator=True):
-        print("Disconnecting WLAN")
+        self.state_mgr.log_emit("Disconnecting WLAN", self.__class__.__name__)
         wlan = WLAN(STA_IF)
         if indicator:
             self.active_indicator(wlan)

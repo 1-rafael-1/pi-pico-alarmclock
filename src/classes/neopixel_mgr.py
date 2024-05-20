@@ -15,14 +15,15 @@ class NeoPixelManager:
 
     def start_update_analog_clock_timer(self):
         if self.update_analog_clock_timer is None:
+           self.state_mgr.log_emit("Starting update analog clock timer", self.__class__.__name__)
            self.all_off()
            self.analog_clock(brightness=0.01)
            self.update_analog_clock_timer = Timer(period=3750, mode=Timer.PERIODIC, callback=lambda t: self.analog_clock(brightness=0.01))
 
     def stop_update_analog_clock_timer(self):
-        print("Stopping update analog clock timer")
+        self.state_mgr.log_emit("Stopping update analog clock timer", self.__class__.__name__)
         if self.update_analog_clock_timer is not None:
-            print("Deinit update analog clock timer")
+            self.state_mgr.log_emit("Stopping update analog clock timer", self.__class__.__name__)
             self.update_analog_clock_timer.deinit()
             self.update_analog_clock_timer = None
             self.all_off()

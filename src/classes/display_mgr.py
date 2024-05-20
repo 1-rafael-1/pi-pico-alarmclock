@@ -30,21 +30,25 @@ class DisplayManager:
 
     def start_update_display_timer(self):
         if self.update_display_timer is None:
+            self.state_mgr.log_emit("Starting update display timer", self.__class__.__name__)
             self.update_display_timer = Timer(period=60000, mode=Timer.PERIODIC, callback=lambda t: self.compose())
 
     def stop_update_display_timer(self):
         if self.update_display_timer is not None:
+            self.state_mgr.log_emit("Stopping update display timer", self.__class__.__name__)
             self.update_display_timer.deinit()
             self.update_display_timer = None
 
     def start_blinking_set_alarm_time(self):
         self.blinking_set_alarm_time = True
         if self.blinking_set_alarm_time_timer is None:
+            self.state_mgr.log_emit("Starting blinking set alarm time timer", self.__class__.__name__)
             self.blinking_set_alarm_time_timer = Timer(period=300, mode=Timer.PERIODIC, callback=lambda t: self.blink_alarm_time())
 
     def stop_blinking_set_alarm_time(self):
         self.blinking_set_alarm_time = False
         if self.blinking_set_alarm_time_timer is not None:
+            self.state_mgr.log_emit("Stopping blinking set alarm time timer", self.__class__.__name__)
             self.blinking_set_alarm_time_timer.deinit()
             self.blinking_set_alarm_time_timer = None
     
@@ -192,15 +196,15 @@ class DisplayManager:
         elif self.state_mgr.menu_get_state() == 'system':
             self.clear_content_area()
             if self.state_mgr.menu_get_system_state() == 'select':
-                print("Displaying system select")
+                self.state_mgr.log_emit("Displaying system select", self.__class__.__name__)
                 self.display_system_select()
             elif self.state_mgr.menu_get_system_state() == 'info':
-                print("Displaying system info")
+                self.state_mgr.log_emit("Displaying system info", self.__class__.__name__)
                 self.display_input_voltage()
                 self.display_available_memory()
                 self.display_board_temperature()
             elif self.state_mgr.menu_get_system_state() == 'shutdown':
-                print("Displaying system shutdown")
+                self.state_mgr.log_emit("Displaying system shutdown", self.__class__.__name__)
                 self.display_shutdown()
         if not self.state_mgr.alarm_is_alarm_raised():
             self.display_battery_state()

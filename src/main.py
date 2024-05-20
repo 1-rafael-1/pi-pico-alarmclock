@@ -14,7 +14,7 @@ def main():
     except KeyboardInterrupt:
         pass
     finally:
-        app.stop()
+        pass
 
 if __name__ == "__main__":
     main()

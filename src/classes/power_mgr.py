@@ -1,7 +1,8 @@
 from machine import Pin, ADC, mem32
 
 class PowerManager:
-    def __init__(self, lower_bound=2.5, upper_bound=4.0):
+    def __init__(self, state_mgr, lower_bound=2.5, upper_bound=4.0):
+        self.state_mgr = state_mgr
         self.lower_bound = lower_bound
         self.upper_bound = upper_bound
         self.conversion_factor = 3.3 / 65535
@@ -54,6 +55,13 @@ class PowerManager:
     def get_temperature(self):
         return self.temperature
     
+    def get_vsys_voltage(self):
+        return self.vsys_voltage
+
+    def log_vsys(self):
+        self.read_vsys()
+        self.state_mgr.log_emit(f"VSYS voltage: {self.vsys_voltage}", self.__class__.__name__)
+
 ## Tests
 
 def test_power_manager():

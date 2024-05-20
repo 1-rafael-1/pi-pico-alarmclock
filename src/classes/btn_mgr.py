@@ -46,6 +46,7 @@ class ButtonManager:
             button = "yellow"
         else:
             return
+        self.state_mgr.log_emit("Button pressed: " + button, self.__class__.__name__)
         if self.is_new_event(button, new_time_pressed):
             if button == "green":
                 self.state_mgr.menu_press_green_button()
