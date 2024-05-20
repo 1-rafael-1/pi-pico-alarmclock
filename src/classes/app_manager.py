@@ -1,22 +1,33 @@
 import micropython
-from utime import sleep
+from utime import sleep, time
 from machine import idle, lightsleep
 from classes.state_mgr import StateManager
 
 class ApplicationManager:
     def __init__(self):
         self.state_mgr = StateManager()
+        self.set_logging_level()
+
+    @micropython.native
+    def set_logging_level(self):
+        self.state_mgr.log_set_verbose(True)
+        self.state_mgr.log_set_log(True)
+        self.state_mgr.log_set_max_log_length(1000)
+        self.state_mgr.log_set_log_file('log.txt')
+        self.state_mgr.log_set_clean_log(True)
 
     @micropython.native
     def initialize(self):
-        print("Initializing...")
+        self.state_mgr.log_emit("Initializing app", self.__class__.__name__)
         self.state_mgr.initialize()
-        print("Initialization complete")
+        self.state_mgr.log_emit("App initialized", self.__class__.__name__)
 
     @micropython.native
     def run(self):
         try:
-            print("app_mgr: Entering main loop...")
+            last_time = time()
+            current_time = time()
+            self.state_mgr.log_emit("Entering main loop", self.__class__.__name__)
             while True:
                 idle()
                 
@@ -29,13 +40,19 @@ class ApplicationManager:
                     self.state_mgr.display_compose()
                     sleep(2)
                     self.state_mgr.lowpower_enter_lowpower_mode()
+
+                if self.state_mgr.log_get_log():
+                    current_time = time()
+                    if current_time - last_time >= 600:
+                        self.state_mgr.power_log_vsys()
+                        last_time = current_time
         except KeyboardInterrupt:
             pass
         except Exception as e:
-            print("An unexpected error occurred in app_mgr.py: ", e)
+            self.state_mgr.log_emit("An unexpected error occurred in app_mgr.py: " + str(e), self.__class__.__name__)
         finally:
-            print("Closing...")
+            self.stop()
 
     def stop(self):
-        print("Closing...")
+        self.state_mgr.log_emit("Exiting main loop", self.__class__.__name__)
         self.state_mgr.deinit()

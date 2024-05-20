@@ -17,10 +17,12 @@ class AlarmManager:
 
     def start_alarm_timer(self):
         if self.alarm_timer is None:
+            self.state_mgr.log_emit("Alarm timer started", self.__class__.__name__)
             self.alarm_timer = Timer(period=30000, mode=Timer.PERIODIC,callback=lambda t: self.check_alarm())
         
     def stop_alarm_timer(self):
         if self.alarm_timer is not None:
+            self.state_mgr.log_emit("Alarm timer stopped", self.__class__.__name__)
             self.alarm_timer.deinit()
             self.alarm_timer = None
         self.state_mgr.alarm_set_alarm_raised(False)
@@ -44,7 +46,7 @@ class AlarmManager:
             current_hours = current_time[3]
             current_minutes = current_time[4]
             alarm_hours, alarm_minutes = map(int, self.state_mgr.alarm_time.split(':'))
-            print(f'Alarm time: {self.state_mgr.alarm_time} Current time: {current_hours}:{current_minutes}')
+            self.state_mgr.log_emit(f'Alarm time: {self.state_mgr.alarm_time} Current time: {current_hours}:{current_minutes}', self.__class__.__name__)
         
             # Calculate the difference in minutes between the current time and the alarm time
             time_diff = (current_hours * 60 + current_minutes) - (alarm_hours * 60 + alarm_minutes)
@@ -59,6 +61,7 @@ class AlarmManager:
         elif self.state_mgr.alarm_is_alarm_raised():
             if self.alarm_raised_time is not None:
                 print(f"elapsed seconds since alarm raised: {time() - self.alarm_raised_time}")
+                self.state_mgr.log_emit(f"elapsed seconds since alarm raised: {time() - self.alarm_raised_time}", self.__class__.__name__)
             if self.alarm_raised_time is not None:
                 if time() - self.alarm_raised_time >= 300:  # 5 minutes
                     if not self.alarm_sequence_sound_running:
@@ -122,6 +125,7 @@ class AlarmManager:
 
     @micropython.native
     def raise_alarm(self):
+        self.state_mgr.log_emit("Alarm raised: starting", self.__class__.__name__)
         self.clear_last_alarm_stopped_time()
         self.randomize_quit_button_sequenze()
         self.state_mgr.alarm_set_alarm_raised(True)
@@ -132,9 +136,11 @@ class AlarmManager:
         sleep(.1) # neopixel needs some time to turn off
         self.start_alarm_sequence_thread()
         self.display_first_quit_button_sequence()
+        self.state_mgr.log_emit("Alarm raised: done", self.__class__.__name__)
         
     @micropython.native
     def quit_alarm(self):
+        self.state_mgr.log_emit("Alarm quit: starting", self.__class__.__name__)
         self.set_last_alarm_stopped_time(time())
         self.state_mgr.alarm_set_alarm_raised(False)
         self.alarm_raised_time = None
@@ -144,6 +150,7 @@ class AlarmManager:
         self.state_mgr.display_clear_first_row()
         self.state_mgr.menu_set_state('idle')
         self.state_mgr.display_compose()
+        self.state_mgr.log_emit("Alarm quit: done", self.__class__.__name__)
         
     def deinit(self):
         self.stop_alarm_timer()

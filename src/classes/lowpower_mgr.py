@@ -9,8 +9,8 @@ class LowPowerManager:
         self.is_lowpower_mode = False
 
     def enter_lowpower_mode(self):
-        print("Entering lowpower mode...")
-        print(f"pins are: {self.green_pin}, {self.blue_pin}, {self.yellow_pin}")
+        self.state_mgr.log_emit("Entering lowpower mode", self.__class__.__name__)
+        self.state_mgr.log_emit(f"pins are: {self.green_pin}, {self.blue_pin}, {self.yellow_pin}", self.__class__.__name__)
         self.is_lowpower_mode = True
         self.state_mgr.menu_set_state("idle")
         self.state_mgr.menu_set_system_state("select")   
@@ -21,7 +21,7 @@ class LowPowerManager:
         self.toggle_clock_speed()
 
     def exit_lowpower_mode(self):
-        print("Exiting lowpower mode...")
+        self.state_mgr.log_emit("Exiting lowpower mode", self.__class__.__name__)
         self.is_lowpower_mode = False
         self.toggle_clock_speed()
         self.deinit_buttons()

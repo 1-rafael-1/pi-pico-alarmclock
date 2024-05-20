@@ -2,6 +2,7 @@ import json
 import _thread
 from utime import sleep
 from machine import freq
+from classes.log_mgr import LogManager
 from classes.wifi_mgr import WifiManager
 from classes.neopixel_mgr import NeoPixelManager
 from classes.display_mgr import DisplayManager
@@ -18,8 +19,9 @@ class StateManager:
         self.button_green_pin = 20
         self.button_blue_pin = 21
         self.button_yellow_pin = 22
-        self.power_manager = PowerManager()
-        self.wifi_manager = WifiManager()
+        self.log_manager = LogManager(self)
+        self.power_manager = PowerManager(self)
+        self.wifi_manager = WifiManager(self)
         self.time_manager = TimeManager(self)
         self.neopixel_manager = NeoPixelManager(self)
         self.display_manager = DisplayManager(self)
@@ -34,6 +36,8 @@ class StateManager:
         self.lock = _thread.allocate_lock()
 
     def initialize(self):
+        self.log_manager.initialize()
+
         self.set_full_clock_speed()
 
         self.display_manager.initialize()
@@ -69,9 +73,9 @@ class StateManager:
 
     # region global state methods
     def set_alarm_active(self, value):
+        self.log_emit(f'Alarm active: {self.alarm_active}', self.__class__.__name__)
         self.alarm_active = value
         self.write_alarm_active()
-        print('Alarm active:', self.alarm_active)
 
     def is_alarm_active(self):
         return self.alarm_active
@@ -96,7 +100,7 @@ class StateManager:
         data['alarm_time'] = self.alarm_time
         with open('settings//alarm.json', 'w') as file:
             json.dump(data, file)
-        print('Alarm time:', self.alarm_time)       
+        self.log_emit(f'Alarm time: {self.alarm_time}', self.__class__.__name__)    
 
     def read_alarm_active(self):
         with open('settings//alarm.json', 'r') as file:
@@ -113,12 +117,12 @@ class StateManager:
     def set_full_clock_speed(self):
         freq(125000000) # 125 MHz, default clock speed for RP2040
         sleep(1) # wait for clock speed to stabilize
-        print(f"Clock speed set to: {freq()}")
+        self.log_emit(f"Clock speed set to: {freq()}", self.__class__.__name__)
 
     def set_low_clock_speed(self):
         freq(20000000) # 20 MHz, lowest clock speed for RP2040
         sleep(1) # wait for clock speed to stabilize
-        print(f"Clock speed set to: {freq()}")
+        self.log_emit(f"Clock speed set to: {freq()}", self.__class__.__name__)
     # endregion
 
     # region PowerManager methods
@@ -142,6 +146,9 @@ class StateManager:
 
     def power_get_temperature(self):
         return self.power_manager.get_temperature()
+    
+    def power_log_vsys(self):
+        self.power_manager.log_vsys()
     # endregion
 
     # region WifiManager methods
@@ -288,6 +295,41 @@ class StateManager:
         return self.lowpower_manager.is_lowpower_mode_active()
     # endregion
 
+    # region LogManager methods
+    def log_emit(self, message, source_class):
+        self.log_manager.emit(message, source_class)
+
+    def log_set_verbose(self, value):
+        self.log_manager.set_verbose(value)
+
+    def log_set_log(self, value):
+        self.log_manager.set_log(value)
+
+    def log_get_verbose(self):
+        return self.log_manager.get_verbose()
+    
+    def log_get_log(self):
+        return self.log_manager.get_log()
+    
+    def log_set_max_log_length(self, value):
+        self.log_manager.set_max_log_length(value)
+
+    def log_get_max_log_length(self):
+        return self.log_manager.get_max_log_length()
+    
+    def log_set_log_file(self, value):
+        self.log_manager.set_log_file(value)
+
+    def log_get_log_file(self):
+        return self.log_manager.get_log_file()
+    
+    def log_set_clean_log(self, value):
+        self.log_manager.set_clean_log(value)
+
+    def log_get_clean_log(self):
+        return self.log_manager.get_clean_log()
+    # endregion
+
     # housekeeping methods
     def deinit(self):
         try:
@@ -316,6 +358,10 @@ class StateManager:
             pass
         try:
             self.sound_manager.deinit()
+        except:
+            pass
+        try:
+            self.log_manager.deinit()
         except:
             pass
 

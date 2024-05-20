@@ -13,10 +13,12 @@ class TimeManager:
         
     def start_update_rtc_timer(self):
         if self.update_rtc_timer is None:
+            self.state_mgr.log_emit("Starting update RTC timer", self.__class__.__name__)
             self.update_rtc_timer = Timer(period=3600000, mode=Timer.PERIODIC, callback=lambda a: self.connect_wifi_and_update_rtc())
 
     def stop_update_rtc_timer(self):
         if self.update_rtc_timer is not None:
+            self.state_mgr.log_emit("Stopping update RTC timer", self.__class__.__name__)
             self.update_rtc_timer.deinit()
             self.update_rtc_timer = None
 
@@ -30,11 +32,11 @@ class TimeManager:
     @micropython.native
     def get_data(self):
         url = self.get_url()
-        print(f"making web request to: {url}")
+        self.state_mgr.log_emit(f"making web request to: {url}", self.__class__.__name__)
         response = urequests.get(url)
         data = ujson.loads(response.text)
         response.close()
-        print("Time data fetched")
+        self.state_mgr.log_emit(f"Time data fetched: {data}", self.__class__.__name__)
         return data
 
     @micropython.native
@@ -60,12 +62,12 @@ class TimeManager:
 
     @micropython.native
     def connect_wifi_and_update_rtc(self):
-        print("Updating RTC...")
+        self.state_mgr.log_emit("Updating RTC", self.__class__.__name__)
 
         self.state_mgr.wifi_connect_wifi(max_wait=20, indicator=True)
         # we must must make sure we have a network connection, urequests has no timeout and will freeze the device	
         if not self.state_mgr.wifi_is_network_up():
-            print("No network connection")
+            self.state_mgr.log_emit("No network connection", self.__class__.__name__)
             return
         
         self.update_rtc()
@@ -77,9 +79,9 @@ class TimeManager:
             data = self.get_data()
             rtc = RTC()
             rtc.datetime(self.compose_data(data))
-            print("RTC updated")
+            self.state_mgr.log_emit("RTC updated", self.__class__.__name__)
         except Exception as e:
-            print("Error updating RTC: ", e)
+            self.state_mgr.log_emit("Error updating RTC: {}".format(e), self.__class__.__name__)
 
     def deinit(self):
         self.stop_update_rtc_timer()
