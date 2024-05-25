@@ -377,3 +377,11 @@ def can_run_sound_alarm_sequence_followed_by_other_operations():
     state_mgr = StateManager()
     state_mgr.sound_alarm_sequence()
     state_mgr.display_compose()
+
+def can_run_alarm_sequence_when_all_other_devices_are_initialized():
+    state_mgr = StateManager()
+    state_mgr.initialize()
+    state_mgr.sound_alarm_sequence()
+    sleep(5)
+    state_mgr.sound_alarm_stop()
+    
