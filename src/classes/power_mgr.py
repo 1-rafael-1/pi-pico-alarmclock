@@ -1,7 +1,7 @@
 from machine import Pin, ADC, mem32
 
 class PowerManager:
-    def __init__(self, state_mgr, lower_bound=2.5, upper_bound=4.0):
+    def __init__(self, state_mgr, lower_bound=2.6, upper_bound=4.0):
         self.state_mgr = state_mgr
         self.lower_bound = lower_bound
         self.upper_bound = upper_bound
