@@ -1,4 +1,3 @@
-import json
 import _thread
 from utime import sleep
 from machine import freq
@@ -16,9 +15,6 @@ from classes.lowpower_mgr import LowPowerManager
 
 class StateManager:
     def __init__(self):
-        self.button_green_pin = 20
-        self.button_blue_pin = 21
-        self.button_yellow_pin = 22
         self.log_manager = LogManager(self)
         self.power_manager = PowerManager(self)
         self.wifi_manager = WifiManager(self)
@@ -26,94 +22,49 @@ class StateManager:
         self.neopixel_manager = NeoPixelManager(self)
         self.display_manager = DisplayManager(self)
         self.menu_manager = MenuManager(self)
-        self.button_manager = ButtonManager(self, green_pin=self.button_green_pin, blue_pin=self.button_blue_pin, yellow_pin=self.button_yellow_pin)
+        self.button_manager = ButtonManager(self, green_pin=20, blue_pin=21, yellow_pin=22)
         self.sound_manager = SoundManager(self)
         self.alarm_manager = AlarmManager(self)
-        self.lowpower_manager = LowPowerManager(self, green_pin=self.button_green_pin, blue_pin=self.button_blue_pin, yellow_pin=self.button_yellow_pin)
-        self.alarm_active = False
-        self.alarm_time = '{:02d}:{:02d}'.format(0,0)
-        self.alarm_raised = False
+        self.lowpower_manager = LowPowerManager(self, green_pin=self.button_manager.get_green_pin(), blue_pin=self.button_manager.get_blue_pin() , yellow_pin=self.button_manager.get_yellow_pin())
         self.lock = _thread.allocate_lock()
 
     def initialize(self):
-        self.log_manager.initialize()
+        self.log_initialize()
+        self.log_emit("Initializing StateManager", self.__class__.__name__)
 
         self.set_full_clock_speed()
 
-        self.display_manager.initialize()
-        self.display_manager.compose_boot('')
+        self.display_initialize()
+        self.display_compose_boot('display mgr')
 
-        self.menu_manager.initialize()
+        self.menu_initialize()
 
-        self.display_manager.compose_boot('power mgr')
-        self.power_manager.initialize()
+        self.display_compose_boot('power mgr')
+        self.power_initialize()
 
-        self.display_manager.compose_boot('wifi + rtc')
-        self.time_manager.initialize()
-        self.time_manager.start_update_rtc_timer()
+        self.display_compose_boot('wifi + rtc')
+        self.time_initialize()
+        self.time_start_update_rtc_timer()
 
-        self.display_manager.compose_boot('read config')
-        self.read_alarm_time()
-        self.read_alarm_active()
+        self.display_compose_boot('alarm mgr')
+        self.alarm_initialize()
+        self.alarm_start_alarm_timer()
 
-        self.display_manager.compose_boot('neopixel')
-        self.neopixel_manager.initialize()
-        if not self.is_alarm_active():
-            self.neopixel_manager.start_update_analog_clock_timer()
+        self.display_compose_boot('neopixel')
+        self.neopixel_initialize()
+        if not self.alarm_is_alarm_active():
+            self.neopixel_start_update_analog_clock_timer()
 
-        self.display_manager.compose_boot('button mgr')
-        self.button_manager.initialize()
-
-        self.display_manager.compose_boot('alarm mgr')
-        self.alarm_manager.start_alarm_timer()
+        self.display_compose_boot('button mgr') 
+        self.button_initialize()
         
-        self.display_manager.compose_boot('normal op')
-        self.display_manager.initialize_normal_operation()
-        self.display_manager.start_update_display_timer()
+        self.display_compose_boot('normal op')
+        self.display_initialize_normal_operation()
+        self.display_start_update_display_timer()
+
+        self.log_emit("StateManager initialized", self.__class__.__name__)
 
     # region global state methods
-    def set_alarm_active(self, value):
-        self.log_emit(f'Alarm active: {self.alarm_active}', self.__class__.__name__)
-        self.alarm_active = value
-        self.write_alarm_active()
-
-    def is_alarm_active(self):
-        return self.alarm_active
-
-    def is_menu_active(self):
-        return self.menu_manager.get_state() in ['system','menu']
-    
-    def set_alarm_time(self, time):
-        self.alarm_time = time
-    
-    def get_alarm_time(self):
-        return self.alarm_time
-
-    def read_alarm_time(self):
-        with open('settings//alarm.json', 'r') as file:
-            data = json.load(file)
-            self.alarm_time = data['alarm_time']
-
-    def write_alarm_time(self):
-        with open('settings//alarm.json', 'r') as file:
-            data = json.load(file)
-        data['alarm_time'] = self.alarm_time
-        with open('settings//alarm.json', 'w') as file:
-            json.dump(data, file)
-        self.log_emit(f'Alarm time: {self.alarm_time}', self.__class__.__name__)    
-
-    def read_alarm_active(self):
-        with open('settings//alarm.json', 'r') as file:
-            data = json.load(file)
-            self.alarm_active = data['alarm_active']
-
-    def write_alarm_active(self):
-        with open('settings//alarm.json', 'r') as file:
-            data = json.load(file)
-        data['alarm_active'] = self.alarm_active
-        with open('settings//alarm.json', 'w') as file:
-            json.dump(data, file)
-
     def set_full_clock_speed(self):
         freq(125000000) # 125 MHz, default clock speed for RP2040
         sleep(1) # wait for clock speed to stabilize
@@ -126,6 +77,9 @@ class StateManager:
     # endregion
 
     # region PowerManager methods
+    def power_initialize(self):
+        self.power_manager.initialize()
+
     def power_get_battery_state(self):
         return self.power_manager.get_battery_state()
     
@@ -166,6 +120,9 @@ class StateManager:
     # endregion
 
     # region MenuManager methods
+    def menu_initialize(self):
+        self.menu_manager.initialize()
+
     def menu_press_green_button(self):
         self.menu_manager.press_green_button()
 
@@ -186,14 +143,23 @@ class StateManager:
     
     def menu_get_system_state(self):
         return self.menu_manager.get_system_state()
+    
+    def menu_is_menu_active(self):
+        return self.menu_manager.get_state() in ['system','menu']
     # endregion
 
     # region DisplayManager methods
+    def display_initialize(self):
+        self.display_manager.initialize()
+
     def display_clear(self):
         self.display_manager.clear()
 
     def display_compose(self):
         self.display_manager.compose()
+
+    def display_compose_boot(self, message):
+        self.display_manager.compose_boot(message)
 
     def display_state_region(self):
         self.display_manager.display_state_region()
@@ -221,9 +187,15 @@ class StateManager:
 
     def display_alarm_quit_sequence(self, index):
         self.display_manager.display_alarm_quit_sequence(index)
+
+    def display_initialize_normal_operation(self):
+        self.display_manager.initialize_normal_operation()
     # endregion
 
     # region NeoPixelManager methods
+    def neopixel_initialize(self):
+        self.neopixel_manager.initialize()
+
     def neopixel_all_off(self):
         self.neopixel_manager.all_off()
 
@@ -250,6 +222,9 @@ class StateManager:
     # endregion
 
     # region AlarmManager methods
+    def alarm_initialize(self):
+        self.alarm_manager.initialize()
+
     def alarm_start_alarm_timer(self):
         self.alarm_manager.start_alarm_timer()
 
@@ -257,11 +232,26 @@ class StateManager:
         self.alarm_manager.stop_alarm_timer()
 
     def alarm_set_alarm_raised(self, value):
-        self.alarm_raised = value
+        self.alarm_manager.set_alarm_raised = value
 
     def alarm_is_alarm_raised(self):
         with self.lock:
-            return self.alarm_raised
+            return self.alarm_manager.is_alarm_raised()
+
+    def alarm_set_alarm_active(self, value):
+        self.alarm_manager.set_alarm_active(value)
+
+    def alarm_is_alarm_active(self):
+        return self.alarm_manager.is_alarm_active()
+    
+    def alarm_set_alarm_time(self, value):
+        self.alarm_manager.set_alarm_time(value)
+
+    def alarm_get_alarm_time(self):
+        return self.alarm_manager.get_alarm_time()
+    
+    def alarm_write_alarm_time(self):
+        self.alarm_manager.write_alarm_time()
 
     def alarm_quit_button_sequence(self):
         return self.alarm_manager.alarm_quit_button_sequence
@@ -296,6 +286,9 @@ class StateManager:
     # endregion
 
     # region LogManager methods
+    def log_initialize(self):
+        self.log_manager.initialize()
+
     def log_emit(self, message, source_class):
         self.log_manager.emit(message, source_class)
 
@@ -330,7 +323,20 @@ class StateManager:
         return self.log_manager.get_clean_log()
     # endregion
 
-    # housekeeping methods
+    # region TimeManager methods
+    def time_initialize(self):
+        self.time_manager.initialize()
+
+    def time_start_update_rtc_timer(self):
+        self.time_manager.start_update_rtc_timer()
+    # endregion
+
+    # region ButtonManager methods
+    def button_initialize(self):
+        self.button_manager.initialize()
+    # endregion
+
+    # region housekeeping methods
     def deinit(self):
         try:
             self.time_manager.deinit()
@@ -364,16 +370,27 @@ class StateManager:
             self.log_manager.deinit()
         except:
             pass
+    # endregion
 
 ## Tests
+
+def can_initialize_state_manager():
+    state_mgr = StateManager()
+    state_mgr.initialize()
+    sleep(5)
+    state_mgr.deinit()
 
 def can_run_sound_alarm_sequence():
     state_mgr = StateManager()
     state_mgr.sound_alarm_sequence()
     sleep(10)
     state_mgr.sound_alarm_stop()
+    sleep(5)
+    state_mgr.deinit()
 
 def can_run_sound_alarm_sequence_followed_by_other_operations():
     state_mgr = StateManager()
     state_mgr.sound_alarm_sequence()
     state_mgr.display_compose()
+    sleep(10)
+    state_mgr.deinit()

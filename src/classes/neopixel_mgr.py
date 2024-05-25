@@ -32,6 +32,7 @@ class NeoPixelManager:
     def all_off(self):
         self.np.fill((0, 0, 0))
         self.np.write()
+        sleep(.1) # neopixel needs some time to turn off
 
     @micropython.native
     def get_color(self, red=0, green=0, blue=0, brightness=0.2):
@@ -210,6 +211,9 @@ class MockStateManager:
 
     def alarm_is_alarm_raised(self):
         return self.alarm_raised
+    
+    def log_emit(self, message, source):
+        print("[{}] {}".format(source, message))
     
 ## Tests
 

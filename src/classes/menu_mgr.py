@@ -74,9 +74,9 @@ class MenuManager:
             return
 
     def toggle_alarm(self):
-        self.state_mgr.set_alarm_active(not self.state_mgr.is_alarm_active())
+        self.state_mgr.alarm_set_alarm_active(not self.state_mgr.alarm_is_alarm_active())
         self.state_mgr.display_state_region()
-        if self.state_mgr.is_alarm_active():
+        if self.state_mgr.alarm_is_alarm_active():
             self.state_mgr.neopixel_stop_update_analog_clock_timer()
         else:
             self.state_mgr.neopixel_start_update_analog_clock_timer()
@@ -86,15 +86,14 @@ class MenuManager:
         self.state_mgr.display_stop_update_display_timer()
         self.state_mgr.alarm_stop_alarm_timer()
         self.state_mgr.display_state_region()
-        self.state_mgr.read_alarm_time()
-        self.state_mgr.display_time(self.state_mgr.get_alarm_time())
+        self.state_mgr.display_time(self.state_mgr.alarm_get_alarm_time())
         self.state_mgr.display_start_blinking_set_alarm_time()
 
     def exit_menu(self):
         self.set_state('idle')
         self.set_system_state('select')
         self.state_mgr.display_stop_blinking_set_alarm_time()
-        self.state_mgr.write_alarm_time()
+        self.state_mgr.alarm_write_alarm_time()
         self.state_mgr.alarm_clear_last_alarm_stopped_time()
         self.state_mgr.display_state_region()
         self.state_mgr.display_compose()
@@ -102,18 +101,18 @@ class MenuManager:
         self.state_mgr.alarm_start_alarm_timer()
 
     def increase_alarm_hour(self):
-        time = self.state_mgr.alarm_time
+        time = self.state_mgr.alarm_get_alarm_time()
         hours, minutes = time.split(':')
         hours = (int(hours) + 1) % 24
         time = '{:02d}:{:02d}'.format(hours, int(minutes))
-        self.state_mgr.set_alarm_time(time)
+        self.state_mgr.alarm_set_alarm_time(time)
 
     def increase_alarm_minute(self):
-        time = self.state_mgr.alarm_time
+        time = self.state_mgr.alarm_get_alarm_time()
         hours, minutes = time.split(':')
         minutes = (int(minutes) + 1) % 60
         time = '{:02d}:{:02d}'.format(int(hours), minutes)
-        self.state_mgr.set_alarm_time(time)
+        self.state_mgr.alarm_set_alarm_time(time)
 
     def attempt_to_quit_alarm(self, button):
         if len(self.state_mgr.alarm_quit_button_sequence()) > 0:
@@ -146,20 +145,42 @@ class MenuManager:
 
 class MockStateManager:
     def __init__(self):
+        self.alarm_quit_button_sequence_mocklist = ['green', 'blue', 'yellow']
         self.alarm_active = False
-        self.alarm_time = '{:02d}:{:02d}'.format(0,0)
+        self.alarm_time = '00:00'
         self.alarm_quit_button_sequence_mocklist = ['green', 'blue', 'yellow']
 
-    def set_alarm_active(self, value):
-        self.alarm_active = value
+    def log_emit(self, message, source):
+        print(f"{source}: {message}")
 
-    def set_alarm_time(self, time):
-        self.alarm_time = time
+    def display_stop_update_display_timer(self):
+        pass
+
+    def alarm_stop_alarm_timer(self):
+        pass
 
     def display_state_region(self):
         pass
 
-    def display_stop_update_display_timer(self):
+    def display_time(self, time):
+        pass
+
+    def alarm_get_alarm_time(self):
+        return self.alarm_time
+    
+    def alarm_set_alarm_time(self, time):
+        self.alarm_time = time
+    
+    def display_start_blinking_set_alarm_time(self):
+        pass
+
+    def display_stop_blinking_set_alarm_time(self):
+        pass
+
+    def alarm_clear_last_alarm_stopped_time(self):
+        pass
+
+    def display_compose(self):
         pass
 
     def display_start_update_display_timer(self):
@@ -168,58 +189,34 @@ class MockStateManager:
     def alarm_start_alarm_timer(self):
         pass
 
-    def alarm_stop_alarm_timer(self):
-        pass
+    def alarm_set_alarm_active(self, active):
+        self.alarm_active = active
 
-    def set_menu_is_active(self, value):
-        pass
-
-    def read_alarm_time(self):
-        self.alarm_time = '11:11'
-
-    def write_alarm_time(self):
-        self.alarm_time = '12:12'
-
-    def display_time(self, time):
-        pass
-
-    def get_alarm_time(self):
-        return self.alarm_time
-    
-    def alarm_quit_button_sequence(self):
-        return self.alarm_quit_button_sequence_mocklist
-    
-    def alarm_remove_first_quit_button_sequence(self):
-        self.alarm_quit_button_sequence_mocklist.pop(0)
-
-    def alarm_quit_alarm(self):
-        pass
-    
-    def display_start_blinking_set_alarm_time(self):
-        pass
-
-    def display_stop_blinking_set_alarm_time(self):
-        pass
-
-    def display_compose(self):
-        pass
-
-    def display_alarm_quit_sequence(self, index):
-        pass
-
-    def display_clear(self):
-        pass
-
-    def alarm_clear_last_alarm_stopped_time(self):
-        pass
-
-    def is_alarm_active(self):
+    def alarm_is_alarm_active(self):
         return self.alarm_active
     
     def neopixel_stop_update_analog_clock_timer(self):
         pass
 
     def neopixel_start_update_analog_clock_timer(self):
+        pass
+
+    def alarm_write_alarm_time(self):
+        pass
+
+    def alarm_quit_button_sequence(self):
+        return self.alarm_quit_button_sequence_mocklist
+    
+    def alarm_remove_first_quit_button_sequence(self):
+        self.alarm_quit_button_sequence_mocklist.pop(0)
+
+    def display_alarm_quit_sequence(self, index):
+        pass
+
+    def alarm_quit_alarm(self):
+        self.alarm_active = False
+
+    def display_clear(self):
         pass
 
 ## Tests
@@ -258,6 +255,8 @@ def alarm_time_can_be_altered():
     #[GIVEN]: A menu manager
     state_mgr = MockStateManager()
     menu_mgr = MenuManager(state_mgr)
+    #[GIVEN]: The alarm time is '11:11'
+    state_mgr.alarm_time = '11:11'
     #[WHEN]: The alarm time is increased
     menu_mgr.enter_menu()
     menu_mgr.increase_alarm_hour()
