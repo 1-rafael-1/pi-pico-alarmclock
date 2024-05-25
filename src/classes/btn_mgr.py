@@ -5,12 +5,15 @@ from utime import ticks_ms, sleep_ms
 class ButtonManager:
     def __init__(self, state_mgr, green_pin=20, blue_pin=21, yellow_pin=22, debounce_time=300):
         self.state_mgr = state_mgr
+        self.green_pin = green_pin
+        self.blue_pin = blue_pin
+        self.yellow_pin = yellow_pin
         self.green_button = Pin(green_pin, Pin.IN, Pin.PULL_UP)
         self.blue_button = Pin(blue_pin, Pin.IN, Pin.PULL_UP)
         self.yellow_button = Pin(yellow_pin, Pin.IN, Pin.PULL_UP)
         self.button_presses = {"green": 0, "blue": 0, "yellow": 0}
         self.last_time = {"green": 0, "blue": 0, "yellow": 0}
-        self.debounce_time = debounce_time # using very cheap buttons, so pretty high default debounce time
+        self.debounce_time = debounce_time
         
     def initialize(self):
         self.setup_interrupts()
@@ -25,13 +28,22 @@ class ButtonManager:
         self.blue_button.irq(trigger=0)
         self.yellow_button.irq(trigger=0)
 
-    def green(self):
+    def get_green_pin(self):
+        return self.green_pin
+    
+    def get_blue_pin(self):
+        return self.blue_pin
+    
+    def get_yellow_pin(self):
+        return self.yellow_pin
+    
+    def get_green_button(self):
         return self.green_button
-
-    def blue(self):
+    
+    def get_blue_button(self):
         return self.blue_button
-
-    def yellow(self):
+    
+    def get_yellow_button(self):
         return self.yellow_button
     
     @micropython.native
@@ -70,34 +82,26 @@ class ButtonManager:
 
 class MockStateManager:
     def __init__(self):
-        self.alarm_time = "00:00"
-        self.alarm_active = False
-        self.menu_active = False
-        self.setting_alarm_hours = False
-        self.setting_alarm_minutes = False
+        self.green_button_presses = 0
         self.blue_button_presses = 0
         self.yellow_button_presses = 0
-        self.green_button_presses = 0
-
-    def press_green_button(self):
+        self.log = []
+    
+    def log_emit(self, message, source):
+        self.log.append(message)
+    
+    def menu_press_green_button(self):
         self.green_button_presses += 1
-        
-    def press_blue_button(self):
+    
+    def menu_press_blue_button(self):
         self.blue_button_presses += 1
-
-    def press_yellow_button(self):
+    
+    def menu_press_yellow_button(self):
         self.yellow_button_presses += 1
 
-    def set_alarm_active(self, value):
-        self.alarm_active = value
-        print("Alarm active set to: " + str(value))
+    def log_emit(self, message, source_class):
+        print(message)
 
-    def display_state_region(self):
-        print("Displaying state region")
-
-    def set_menu_is_active(self, value):
-        self.menu_active = value
-        print("Menu active set to: " + str(value))
 
 ## Tests
 
@@ -112,9 +116,9 @@ def button_manager_runs():
     assert state_mgr.blue_button_presses == 0, "Expected blue button presses to be 0"
     assert state_mgr.yellow_button_presses == 0, "Expected yellow button presses to be 0"
     #[WHEN]: button presses
-    button_mgr.button_callback(button_mgr.green())
-    button_mgr.button_callback(button_mgr.blue())
-    button_mgr.button_callback(button_mgr.yellow())
+    button_mgr.button_callback(button_mgr.get_green_button())
+    button_mgr.button_callback(button_mgr.get_blue_button())
+    button_mgr.button_callback(button_mgr.get_yellow_button())
     #[THEN]: button presses are 1
     assert state_mgr.green_button_presses == 1, "Expected green button presses to be 1"
     assert state_mgr.blue_button_presses == 1, "Expected blue button presses to be 1"

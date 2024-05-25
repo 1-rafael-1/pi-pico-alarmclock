@@ -143,10 +143,10 @@ class DisplayManager:
 
     @micropython.native
     def display_state_region(self):
-        if self.state_mgr.is_menu_active(): #menu beats alarm
+        if self.state_mgr.menu_is_menu_active(): #menu beats alarm
             file = 'media/settings.pbm'
             data = self.load_image(file)
-        elif self.state_mgr.alarm_active: #alarm beats idle
+        elif self.state_mgr.alarm_is_alarm_active(): #alarm beats idle
             file = 'media/saber.pbm'
             data = self.load_image(file)
         else: #neither menu nor alarm active
@@ -224,7 +224,7 @@ class DisplayManager:
 
     @micropython.native
     def display_alarm_time(self):
-        self.display_time(self.state_mgr.alarm_time)
+        self.display_time(self.state_mgr.alarm_get_alarm_time())
 
     @micropython.native
     def display_alarm_quit_sequence(self, index):
@@ -251,68 +251,30 @@ class DisplayManager:
 # use to test DisplayManager in isolation
 class MockStateManager:
     def __init__(self):
-        self.alarm_time = "00:00"
-        self.alarm_active = False
-        self.menu_active = False
-        self.setting_alarm_hours = False
-        self.setting_alarm_minutes = False
-        self.menu_system_state = 'info'
+        self.menu_state = 'idle'
+        self.menu_system_state = 'select'
 
-    def get_time(self):
-        return "12:00"
-    
-    def set_alarm_active(self, value):
-        self.alarm_active = value
+    def log_emit(self, message, source):
+        print(message)
 
-    def set_menu_is_active(self, value):
-        self.menu_active = value
-
-    def set_alarm_time(self, time):
-        self.alarm_time = time
-
-    def get_battery_voltage(self):
-        return 3.7
-
-    def get_battery_percentage(self):
-        return 50
-
-    def is_charging(self):
-        return False
-
-    def is_alarm_active(self):
-        return self.alarm_active
-
-    def is_menu_active(self):
-        return self.menu_active
-
-    def is_setting_alarm_hours(self):
-        return self.setting_alarm_hours
-
-    def is_setting_alarm_minutes(self):
-        return self.setting_alarm_minutes
-    
-    def read_vsys(self):
-        pass
-
-    def is_usb_powered(self):
-        return False
-    
-    def get_battery_charge_percentage(self):
-        return 50
-    
-    def get_vsys_voltage(self):
-        return 3.7
-    
-    def alarm_quit_button_sequence(self):
-        return ['green', 'blue', 'yellow']
-    
     def menu_get_state(self):
-        if self.menu_active:
-            return 'system'
-        if self.alarm_active:
-            return 'alarm_raised'
-        return 'idle'
+        return self.menu_state
     
+    def menu_set_state(self, state):
+        self.menu_state = state
+
+    def menu_get_system_state(self):
+        return self.menu_system_state
+    
+    def menu_set_system_state(self, state):
+        self.menu_system_state = state
+    
+    def menu_is_menu_active(self):
+        return False
+    
+    def alarm_is_alarm_raised(self):
+        return False
+
     def power_read_vsys(self):
         pass
 
@@ -320,19 +282,22 @@ class MockStateManager:
         return False
     
     def power_get_battery_charge_percentage(self):
-        return 50
-    
-    def alarm_is_alarm_raised(self):
-        return False
+        return 80
     
     def power_get_vsys_voltage(self):
-        return 3.7
+        return 3.2
     
-    def set_menu_system_state(self, state):
-        self.menu_system_state = state
+    def alarm_set_alarm_active(self, active):
+        pass
 
-    def menu_get_system_state(self):
-        return self.menu_system_state
+    def alarm_is_alarm_active(self):
+        return True
+    
+    def alarm_get_alarm_time(self):
+        return '12:00'
+    
+    def alarm_quit_button_sequence(self):
+        return ['green', 'blue', 'yellow']
 
 ## Tests
 def display_manager_composes():
@@ -376,7 +341,7 @@ def display_manager_displays_state_region():
     print("Test DisplayManager display state region")
     state_mgr = MockStateManager()
     display_mgr = DisplayManager(state_mgr)
-    state_mgr.set_alarm_active(True)
+    state_mgr.alarm_set_alarm_active(True)
     #[WHEN]: DisplayManager displays state region
     display_mgr.display_state_region()
     #[THEN]: DisplayManager displays state region successfully
@@ -422,15 +387,15 @@ def display_manager_displays_shutdown_after_normal_display():
     state_mgr = MockStateManager()
     display_mgr = DisplayManager(state_mgr)
     #[GIVEN]: Menu system state is 'select', we are in menu state 'idle' 
-    state_mgr.set_menu_system_state('select')
-    state_mgr.set_menu_is_active(False)
+    state_mgr.menu_set_system_state('select')
+    state_mgr.menu_set_state('idle')
     #[WHEN]: DisplayManager composes
     display_mgr.compose()
     #[THEN]: DisplayManager composes successfully
     sleep(1)
     #[WHEN]: we have progressed to menu state 'system' and system state 'shutdown'
-    state_mgr.set_menu_system_state('shutdown')
-    state_mgr.set_menu_is_active(True)
+    state_mgr.menu_set_system_state('shutdown')
+    state_mgr.menu_set_state('system')
     #[WHEN]: DisplayManager displays shutdown message
     display_mgr.compose()
     display_mgr.display_shutdown()
@@ -445,15 +410,15 @@ def display_manager_displays_system_select():
     state_mgr = MockStateManager()
     display_mgr = DisplayManager(state_mgr)
     #[GIVEN]: Menu system state is 'select', we are in menu state 'idle' 
-    state_mgr.set_menu_system_state('select')
-    state_mgr.set_menu_is_active(False)
+    state_mgr.menu_set_system_state('select')
+    state_mgr.menu_set_state('idle') 
     #[WHEN]: DisplayManager composes
     display_mgr.compose()
     #[THEN]: DisplayManager composes successfully
     sleep(1)
     #[WHEN]: we have progressed to menu state 'system' and system state 'select'
-    state_mgr.set_menu_system_state('select')
-    state_mgr.set_menu_is_active(True)
+    state_mgr.menu_set_system_state('select')
+    state_mgr.menu_set_state('system') 
     #[WHEN]: DisplayManager composes
     display_mgr.compose()
     #[THEN]: DisplayManager composes successfully

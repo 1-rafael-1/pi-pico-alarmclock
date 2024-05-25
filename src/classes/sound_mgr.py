@@ -86,8 +86,8 @@ class MockStateManager:
         self.alarm_active = False
         self.alarm_raised = False
 
-    def log_emit(self, message, source):
-        pass
+    def log_emit(self, msg, source):
+        print(f"{source}: {msg}")
     
 ## Tests
 def sound_manager_alarm_sequence_can_start_and_stop():

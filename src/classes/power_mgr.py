@@ -1,7 +1,7 @@
 from machine import Pin, ADC, mem32
 
 class PowerManager:
-    def __init__(self, state_mgr, lower_bound=2.5, upper_bound=4.0):
+    def __init__(self, state_mgr, lower_bound=2.6, upper_bound=4.0):
         self.state_mgr = state_mgr
         self.lower_bound = lower_bound
         self.upper_bound = upper_bound
@@ -62,14 +62,21 @@ class PowerManager:
         self.read_vsys()
         self.state_mgr.log_emit(f"VSYS voltage: {self.vsys_voltage}", self.__class__.__name__)
 
+## Mocks
+
+class MockStateManager:
+    def log_emit(self, msg, source):
+        print(f"{source}: {msg}")
+
 ## Tests
 
 def test_power_manager():
-    power = PowerManager()
-    power.read_vsys()
-    power.read_temperature()
-    print('Battery state:', power.get_battery_state())
-    print('Battery charge percentage:', power.get_battery_charge_percentage())
-    print('USB powered:', power.is_usb_powered())
-    print('Temperature:', power.get_temperature())
+    state_mgr = MockStateManager()
+    power_mgr = PowerManager(state_mgr)
+    power_mgr.read_vsys()
+    power_mgr.read_temperature()
+    print('Battery state:', power_mgr.get_battery_state())
+    print('Battery charge percentage:', power_mgr.get_battery_charge_percentage())
+    print('USB powered:', power_mgr.is_usb_powered())
+    print('Temperature:', power_mgr.get_temperature())
     
