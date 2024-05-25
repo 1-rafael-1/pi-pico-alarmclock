@@ -16,9 +16,6 @@ from classes.lowpower_mgr import LowPowerManager
 
 class StateManager:
     def __init__(self):
-        self.button_green_pin = 20
-        self.button_blue_pin = 21
-        self.button_yellow_pin = 22
         self.log_manager = LogManager(self)
         self.power_manager = PowerManager(self)
         self.wifi_manager = WifiManager(self)
@@ -26,13 +23,13 @@ class StateManager:
         self.neopixel_manager = NeoPixelManager(self)
         self.display_manager = DisplayManager(self)
         self.menu_manager = MenuManager(self)
-        self.button_manager = ButtonManager(self, green_pin=self.button_green_pin, blue_pin=self.button_blue_pin, yellow_pin=self.button_yellow_pin)
+        self.button_manager = ButtonManager(self, green_pin=20, blue_pin=21, yellow_pin=22)
         self.sound_manager = SoundManager(self)
         self.alarm_manager = AlarmManager(self)
-        self.lowpower_manager = LowPowerManager(self, green_pin=self.button_green_pin, blue_pin=self.button_blue_pin, yellow_pin=self.button_yellow_pin)
-        self.alarm_active = False
-        self.alarm_time = '{:02d}:{:02d}'.format(0,0)
-        self.alarm_raised = False
+        self.lowpower_manager = LowPowerManager(self, green_pin=self.button_manager.get_green_pin, blue_pin=self.button_manager.get_blue_pin , yellow_pin=self.button_manager.get_yellow_pin)
+        self.alarm_active = False # ToDo: move to AlarmManager
+        self.alarm_time = '{:02d}:{:02d}'.format(0,0) # ToDo: move to AlarmManager
+        self.alarm_raised = False # ToDo: move to AlarmManager 
         self.lock = _thread.allocate_lock()
 
     def initialize(self):

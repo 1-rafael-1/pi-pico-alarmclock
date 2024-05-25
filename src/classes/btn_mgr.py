@@ -5,12 +5,15 @@ from utime import ticks_ms, sleep_ms
 class ButtonManager:
     def __init__(self, state_mgr, green_pin=20, blue_pin=21, yellow_pin=22, debounce_time=300):
         self.state_mgr = state_mgr
+        self.green_pin = green_pin
+        self.blue_pin = blue_pin
+        self.yellow_pin = yellow_pin
         self.green_button = Pin(green_pin, Pin.IN, Pin.PULL_UP)
         self.blue_button = Pin(blue_pin, Pin.IN, Pin.PULL_UP)
         self.yellow_button = Pin(yellow_pin, Pin.IN, Pin.PULL_UP)
         self.button_presses = {"green": 0, "blue": 0, "yellow": 0}
         self.last_time = {"green": 0, "blue": 0, "yellow": 0}
-        self.debounce_time = debounce_time # using very cheap buttons, so pretty high default debounce time
+        self.debounce_time = debounce_time
         
     def initialize(self):
         self.setup_interrupts()
@@ -25,14 +28,14 @@ class ButtonManager:
         self.blue_button.irq(trigger=0)
         self.yellow_button.irq(trigger=0)
 
-    def green(self):
-        return self.green_button
-
-    def blue(self):
-        return self.blue_button
-
-    def yellow(self):
-        return self.yellow_button
+    def get_green_pin(self):
+        return self.green_pin
+    
+    def get_blue_pin(self):
+        return self.blue_pin
+    
+    def get_yellow_pin(self):
+        return self.yellow_pin
     
     @micropython.native
     def button_callback(self, pin):
