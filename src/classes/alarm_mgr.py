@@ -48,12 +48,10 @@ class AlarmManager:
             alarm_hours, alarm_minutes = map(int, self.state_mgr.alarm_time.split(':'))
             self.state_mgr.log_emit(f'Alarm time: {self.state_mgr.alarm_time} Current time: {current_hours}:{current_minutes}', self.__class__.__name__)
         
-            # Calculate the difference in minutes between the current time and the alarm time
             time_diff = (current_hours * 60 + current_minutes) - (alarm_hours * 60 + alarm_minutes)
             
-            # Adjust the time difference for the case where the current time is on the next day
-            if time_diff < -30:  # The current time is on the next day
-                time_diff += 24 * 60  # Add 24 hours to the time difference
+            if time_diff < -30:
+                time_diff += 24 * 60
         
             if -5 <= time_diff <= 3:
                 if not self.state_mgr.alarm_is_alarm_raised():
@@ -63,11 +61,11 @@ class AlarmManager:
                 print(f"elapsed seconds since alarm raised: {time() - self.alarm_raised_time}")
                 self.state_mgr.log_emit(f"elapsed seconds since alarm raised: {time() - self.alarm_raised_time}", self.__class__.__name__)
             if self.alarm_raised_time is not None:
-                if time() - self.alarm_raised_time >= 300:  # 5 minutes
+                if time() - self.alarm_raised_time >= 300:
                     if not self.alarm_sequence_sound_running:
                         self.alarm_sequence_sound_running = True
                         self.state_mgr.sound_alarm_sequence()
-                if time() - self.alarm_raised_time >= 600:  # 10 minutes
+                if time() - self.alarm_raised_time >= 600:
                     self.quit_alarm()
                     self.alarm_raised_time = None
 
@@ -90,8 +88,7 @@ class AlarmManager:
         self.set_alarm_sequence_running(True)
         self.state_mgr.neopixel_all_off()
         self.state_mgr.neopixel_sunrise(duration=300)
-        # self.state_mgr.sound_alarm_sequence() # async, non-blocking
-        # sleep(5) # wait for sound to start
+        self.state_mgr.sound_alarm_sequence() # async, non-blocking
         while self.state_mgr.alarm_is_alarm_raised():
             for i in range(7):
                 if not self.state_mgr.alarm_is_alarm_raised():
@@ -133,7 +130,6 @@ class AlarmManager:
         self.alarm_raised_time = time()
         self.state_mgr.neopixel_stop_update_analog_clock_timer()
         self.state_mgr.neopixel_all_off()
-        sleep(.1) # neopixel needs some time to turn off
         self.start_alarm_sequence_thread()
         self.display_first_quit_button_sequence()
         self.state_mgr.log_emit("Alarm raised: done", self.__class__.__name__)
