@@ -212,6 +212,9 @@ class MockStateManager:
     def alarm_is_alarm_raised(self):
         return self.alarm_raised
     
+    def log_emit(self, message, source):
+        print("[{}] {}".format(source, message))
+    
 ## Tests
 
 def single_on_switches_single_led_on():

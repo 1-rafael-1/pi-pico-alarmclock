@@ -37,6 +37,15 @@ class ButtonManager:
     def get_yellow_pin(self):
         return self.yellow_pin
     
+    def get_green_button(self):
+        return self.green_button
+    
+    def get_blue_button(self):
+        return self.blue_button
+    
+    def get_yellow_button(self):
+        return self.yellow_button
+    
     @micropython.native
     def button_callback(self, pin):
         from utime import ticks_ms
@@ -73,34 +82,26 @@ class ButtonManager:
 
 class MockStateManager:
     def __init__(self):
-        self.alarm_time = "00:00"
-        self.alarm_active = False
-        self.menu_active = False
-        self.setting_alarm_hours = False
-        self.setting_alarm_minutes = False
+        self.green_button_presses = 0
         self.blue_button_presses = 0
         self.yellow_button_presses = 0
-        self.green_button_presses = 0
-
-    def press_green_button(self):
+        self.log = []
+    
+    def log_emit(self, message, source):
+        self.log.append(message)
+    
+    def menu_press_green_button(self):
         self.green_button_presses += 1
-        
-    def press_blue_button(self):
+    
+    def menu_press_blue_button(self):
         self.blue_button_presses += 1
-
-    def press_yellow_button(self):
+    
+    def menu_press_yellow_button(self):
         self.yellow_button_presses += 1
 
-    def set_alarm_active(self, value):
-        self.alarm_active = value
-        print("Alarm active set to: " + str(value))
+    def log_emit(self, message, source_class):
+        print(message)
 
-    def display_state_region(self):
-        print("Displaying state region")
-
-    def set_menu_is_active(self, value):
-        self.menu_active = value
-        print("Menu active set to: " + str(value))
 
 ## Tests
 
@@ -115,9 +116,9 @@ def button_manager_runs():
     assert state_mgr.blue_button_presses == 0, "Expected blue button presses to be 0"
     assert state_mgr.yellow_button_presses == 0, "Expected yellow button presses to be 0"
     #[WHEN]: button presses
-    button_mgr.button_callback(button_mgr.green())
-    button_mgr.button_callback(button_mgr.blue())
-    button_mgr.button_callback(button_mgr.yellow())
+    button_mgr.button_callback(button_mgr.get_green_button())
+    button_mgr.button_callback(button_mgr.get_blue_button())
+    button_mgr.button_callback(button_mgr.get_yellow_button())
     #[THEN]: button presses are 1
     assert state_mgr.green_button_presses == 1, "Expected green button presses to be 1"
     assert state_mgr.blue_button_presses == 1, "Expected blue button presses to be 1"

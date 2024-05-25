@@ -1,4 +1,5 @@
 import micropython
+import json
 from utime import sleep, time, localtime
 from machine import Timer
 from urandom import randint
@@ -8,12 +9,65 @@ class AlarmManager:
     def __init__(self, state_mgr):
         self.state_mgr = state_mgr
         self.alarm_timer = None
+        self.alarm_active = False
+        self.alarm_raised = False
+        self.alarm_time = '{:02d}:{:02d}'.format(0,0) # ToDo: move to AlarmManager
+        self.alarm_raised = False # ToDo: move to AlarmManager 
         self.alarm_raised_time = None
         self.last_alarm_stopped_time = None
         self.alarm_quit_button_sequence = []
         self.alarm_sequence_thread = None
         self.alarm_sequence_running = False
         self.alarm_sequence_sound_running = False
+    
+    def initialize(self):
+        self.read_alarm_time()
+        self.read_alarm_active()    
+
+    def set_alarm_active(self, value):
+        self.state_mgr.log_emit(f'Alarm active: {self.alarm_active}', self.__class__.__name__)
+        self.alarm_active = value
+        self.write_alarm_active()
+
+    def is_alarm_active(self):
+        return self.alarm_active
+    
+    def set_alarm_raised(self, value):
+        self.alarm_raised = value
+
+    def is_alarm_raised(self):
+        return self.alarm_raised
+    
+    def set_alarm_time(self, time):
+        self.alarm_time = time
+
+    def get_alarm_time(self):
+        return self.alarm_time
+    
+    def read_alarm_time(self):
+        with open('settings//alarm.json', 'r') as file:
+            data = json.load(file)
+            self.set_alarm_time(data['alarm_time'])
+
+    def write_alarm_time(self):
+        with open('settings//alarm.json', 'r') as file:
+            data = json.load(file)
+        data['alarm_time'] = self.get_alarm_time()
+        with open('settings//alarm.json', 'w') as file:
+            json.dump(data, file)
+        self.state_mgr.log_emit(f'Alarm time: {self.get_alarm_time()}', self.__class__.__name__)    
+
+    def read_alarm_active(self):
+        with open('settings//alarm.json', 'r') as file:
+            data = json.load(file)
+            self.set_alarm_active(data['alarm_active'])
+
+    def write_alarm_active(self):
+        with open('settings//alarm.json', 'r') as file:
+            data = json.load(file)
+        data['alarm_active'] = self.is_alarm_active()
+        with open('settings//alarm.json', 'w') as file:
+            json.dump(data, file)
 
     def start_alarm_timer(self):
         if self.alarm_timer is None:
@@ -25,7 +79,7 @@ class AlarmManager:
             self.state_mgr.log_emit("Alarm timer stopped", self.__class__.__name__)
             self.alarm_timer.deinit()
             self.alarm_timer = None
-        self.state_mgr.alarm_set_alarm_raised(False)
+        self.set_alarm_raised(False)
 
     def set_last_alarm_stopped_time(self, time):
         self.last_alarm_stopped_time = time
@@ -41,12 +95,12 @@ class AlarmManager:
 
     @micropython.native
     def check_alarm(self):
-        if self.state_mgr.is_alarm_active() and not self.state_mgr.alarm_is_alarm_raised() and not self.is_last_alarm_just_stopped():
+        if self.is_alarm_active() and not self.is_alarm_raised() and not self.is_last_alarm_just_stopped():
             current_time = localtime()
             current_hours = current_time[3]
             current_minutes = current_time[4]
-            alarm_hours, alarm_minutes = map(int, self.state_mgr.alarm_time.split(':'))
-            self.state_mgr.log_emit(f'Alarm time: {self.state_mgr.alarm_time} Current time: {current_hours}:{current_minutes}', self.__class__.__name__)
+            alarm_hours, alarm_minutes = map(int, self.get_alarm_time().split(':'))
+            self.state_mgr.log_emit(f'Alarm time: {self.get_alarm_time()} Current time: {current_hours}:{current_minutes}', self.__class__.__name__)
         
             time_diff = (current_hours * 60 + current_minutes) - (alarm_hours * 60 + alarm_minutes)
             
@@ -54,11 +108,10 @@ class AlarmManager:
                 time_diff += 24 * 60
         
             if -5 <= time_diff <= 3:
-                if not self.state_mgr.alarm_is_alarm_raised():
+                if not self.is_alarm_raised():
                     self.raise_alarm()
-        elif self.state_mgr.alarm_is_alarm_raised():
+        elif self.is_alarm_raised():
             if self.alarm_raised_time is not None:
-                print(f"elapsed seconds since alarm raised: {time() - self.alarm_raised_time}")
                 self.state_mgr.log_emit(f"elapsed seconds since alarm raised: {time() - self.alarm_raised_time}", self.__class__.__name__)
             if self.alarm_raised_time is not None:
                 if time() - self.alarm_raised_time >= 300:
@@ -89,9 +142,9 @@ class AlarmManager:
         self.state_mgr.neopixel_all_off()
         self.state_mgr.neopixel_sunrise(duration=300)
         self.state_mgr.sound_alarm_sequence() # async, non-blocking
-        while self.state_mgr.alarm_is_alarm_raised():
+        while self.is_alarm_raised():
             for i in range(7):
-                if not self.state_mgr.alarm_is_alarm_raised():
+                if not self.is_alarm_raised():
                     break
                 if i == 0: 
                     self.state_mgr.neopixel_all_off()
@@ -125,7 +178,7 @@ class AlarmManager:
         self.state_mgr.log_emit("Alarm raised: starting", self.__class__.__name__)
         self.clear_last_alarm_stopped_time()
         self.randomize_quit_button_sequenze()
-        self.state_mgr.alarm_set_alarm_raised(True)
+        self.set_alarm_raised(True)
         self.state_mgr.menu_set_state('alarm_raised')
         self.alarm_raised_time = time()
         self.state_mgr.neopixel_stop_update_analog_clock_timer()
@@ -138,7 +191,7 @@ class AlarmManager:
     def quit_alarm(self):
         self.state_mgr.log_emit("Alarm quit: starting", self.__class__.__name__)
         self.set_last_alarm_stopped_time(time())
-        self.state_mgr.alarm_set_alarm_raised(False)
+        self.set_alarm_raised(False)
         self.alarm_raised_time = None
         self.state_mgr.neopixel_all_off()
         self.state_mgr.sound_alarm_stop()
@@ -162,67 +215,53 @@ class MockStateManager:
         self.alarm_active = False
         self.alarm_raised = False
 
-    def is_alarm_active(self):
-        return self.alarm_active
-
-    def alarm_is_alarm_raised(self):
-        return self.alarm_raised
+    def log_emit(self, message, source):
+        print(f"{source}: {message}")
     
     def alarm_set_alarm_raised(self, value):
         self.alarm_raised = value
 
-    def get_alarm_time(self):
-        return self.alarm_time
-
-    def set_alarm_time(self, time):
-        self.alarm_time = time
-
-    def neopixel_stop_update_analog_clock_timer(self):
-        print("Neopixel stop update analog clock timer")
-
-    def start_alarm_sequence_thread(self):
-        print("Neopixel start alarm sequence thread")
-    
-    def neopixel_start_update_analog_clock_timer(self):
-        print("Neopixel start update analog clock timer")
+    def alarm_is_alarm_raised(self):
+        return self.alarm_raised
 
     def menu_set_state(self, state):
-        print(f"Menu set state: {state}")
+        pass
 
-    def display_alarm_quit_sequence(self, index):
-        print(f"Display alarm quit sequence: {index}")
+    def neopixel_get_color(self, color):
+        pass
 
-    def display_clear_first_row(self):
-        print("Display clear first row")
-
-    def display_compose(self):
-        print("Display compose")
-
-    def sound_alarm_sequence(self):
-        print("Sound alarm sequence")
-
-    def sound_alarm_stop(self):
-        print("Sound alarm stop")
+    def neopixel_stop_update_analog_clock_timer(self):
+        pass
 
     def neopixel_all_off(self):
-        print("Neopixel all off")
+        pass
 
     def neopixel_sunrise(self, duration):
-        print(f"Neopixel sunrise: {duration}")
+        pass
 
-    def neopixel_pendulum(self, colors, delay, loops):
-        print(f"Neopixel pendulum: {colors}, {delay}, {loops}")
+    def neopixel_turning_wheel(self, color, delay, loops):
+        pass
 
     def neopixel_chase(self, colors, delay, loops):
-        print(f"Neopixel chase: {colors}, {delay}, {loops}")
-    
-    def neopixel_turning_wheel(self, color, delay, loops):
-        print(f"Neopixel turning wheel: {color}, {delay}, {loops}")
+        pass
 
-    def neopixel_get_color(self, r, g, b):
-        return (r, g, b)
-    
+    def neopixel_pendulum(self, colors, delay, loops):
+        pass
 
+    def display_alarm_quit_sequence(self, index):
+        pass
+
+    def sound_alarm_sequence(self):
+        pass
+
+    def sound_alarm_stop(self):
+        pass
+
+    def display_clear_first_row(self):
+        pass
+
+    def display_compose(self):
+        pass
 
 ## Tests
 
