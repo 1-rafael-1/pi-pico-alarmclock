@@ -3,16 +3,21 @@ from utime import sleep
 
 class SoundManager:
     def __init__(self, state_mgr):
-        self.player = DFPlayerMini(uartinstance=0, tx_pin=0, rx_pin=1, power_pin=8)
+        self.player = DFPlayerMini(uartinstance=1, tx_pin=4, rx_pin=5, power_pin=8, busy_pin=3)
         self.state_mgr = state_mgr
 
-    def delay(self):
-        self.state_mgr.log_emit("Delaying", self.__class__.__name__)
-        self.player.begin()
+    def delay(self, times=1):
+        for i in range(1, times):
+            self.state_mgr.log_emit("Delaying", self.__class__.__name__)
+            self.player.begin()
+            i += 1
 
     def reset(self):
         self.state_mgr.log_emit("Resetting player", self.__class__.__name__)
         self.player.reset()
+
+    def is_busy(self):
+        return self.player.is_busy()
 
     def set_eq(self, eq):
         self.state_mgr.log_emit("Setting equalizer to " + str(eq), self.__class__.__name__)
@@ -56,18 +61,35 @@ class SoundManager:
 
     def alarm_sequence(self):
         self.state_mgr.log_emit("Playing alarm sequence", self.__class__.__name__)
-        self.power_on()
         self.state_mgr.log_emit("Powering on", self.__class__.__name__)
-        for i in range(1, 20):
-            self.delay()
-            i += 1
+        self.power_on()
+        self.delay(5)
         self.state_mgr.log_emit("Should be powered on", self.__class__.__name__)
         self.set_eq(4) # classic
-        self.delay()
-        self.set_volume(10) # medium volume
-        self.delay()
+        self.delay(2)
+        self.set_volume(5) # medium volume
+        self.delay(3)
+        max_tries = 20
+        i = 0
         self.play(1)
-        self.delay()
+        self.delay(3)
+        while self.is_busy() == False:
+            self.state_mgr.log_emit("Repeated attempt to wait for busy", self.__class__.__name__)
+            self.delay(1)
+            i += 1
+            if i >= max_tries:
+                self.state_mgr.log_emit("Failed to wait for busy", self.__class__.__name__)
+                break
+        i = 0
+        while self.is_busy() == False:
+            self.state_mgr.log_emit("Repeated attempt to play alarm sound", self.__class__.__name__)
+            self.play(1)  
+            self.delay(5)
+            i += 1
+            if i >= max_tries:
+                self.state_mgr.log_emit("Failed to play alarm sound", self.__class__.__name__)
+                break
+        self.delay(1)
 
     def alarm_stop(self):
         self.state_mgr.log_emit("Stopping alarm sequence", self.__class__.__name__)
