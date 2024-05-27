@@ -19,6 +19,7 @@ class AlarmManager:
         self.alarm_sequence_thread = None
         self.alarm_sequence_running = False
         self.alarm_sequence_sound_running = False
+        self.sunrise_duration = 300
     
     def initialize(self):
         self.read_alarm_time()
@@ -55,7 +56,7 @@ class AlarmManager:
         data['alarm_time'] = self.get_alarm_time()
         with open('settings//alarm.json', 'w') as file:
             json.dump(data, file)
-        self.state_mgr.log_emit(f'Alarm time: {self.get_alarm_time()}', self.__class__.__name__)    
+        self.state_mgr.log_emit(f'Alarm time saved: {self.get_alarm_time()}', self.__class__.__name__)    
 
     def read_alarm_active(self):
         with open('settings//alarm.json', 'r') as file:
@@ -68,6 +69,7 @@ class AlarmManager:
         data['alarm_active'] = self.is_alarm_active()
         with open('settings//alarm.json', 'w') as file:
             json.dump(data, file)
+        self.state_mgr.log_emit(f'Alarm active saved: {self.is_alarm_active()}', self.__class__.__name__)
 
     def start_alarm_timer(self):
         if self.alarm_timer is None:
@@ -114,10 +116,6 @@ class AlarmManager:
             if self.alarm_raised_time is not None:
                 self.state_mgr.log_emit(f"elapsed seconds since alarm raised: {time() - self.alarm_raised_time}", self.__class__.__name__)
             if self.alarm_raised_time is not None:
-                if time() - self.alarm_raised_time >= 300:
-                    if not self.alarm_sequence_sound_running:
-                        self.alarm_sequence_sound_running = True
-                        self.state_mgr.sound_alarm_sequence()
                 if time() - self.alarm_raised_time >= 600:
                     self.quit_alarm()
                     self.alarm_raised_time = None
@@ -140,7 +138,8 @@ class AlarmManager:
     def alarm_sequence(self):
         self.set_alarm_sequence_running(True)
         self.state_mgr.neopixel_all_off()
-        self.state_mgr.neopixel_sunrise(duration=300)
+        self.state_mgr.neopixel_sunrise(duration=self.sunrise_duration)
+        self.state_mgr.neopixel_all_off()
         self.state_mgr.sound_alarm_sequence() # async, non-blocking
         while self.is_alarm_raised():
             for i in range(7):
