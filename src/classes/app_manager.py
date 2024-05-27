@@ -29,8 +29,7 @@ class ApplicationManager:
             current_time = time()
             self.state_mgr.log_emit("Entering main loop", self.__class__.__name__)
             while True:
-                idle()
-                
+                idle()        
                 if self.state_mgr.lowpower_is_lowpower_mode_active():
                     sleep(10)
                 else:
@@ -40,6 +39,11 @@ class ApplicationManager:
                     self.state_mgr.display_compose()
                     sleep(2)
                     self.state_mgr.lowpower_enter_lowpower_mode()
+
+                # current_time = time()
+                # if current_time - last_time >= 30:
+                #     self.state_mgr.sound_alarm_sequence()
+                #     last_time = current_time
 
                 if self.state_mgr.log_get_log():
                     current_time = time()
