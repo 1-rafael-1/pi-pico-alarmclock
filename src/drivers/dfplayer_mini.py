@@ -5,6 +5,7 @@
 # fixed missing method validate_checksum
 # fixed missing constants
 # added option to control power to the module
+# added option to check if the module is busy
 
 import machine
 import utime
@@ -101,10 +102,12 @@ class DFPlayerMini:
 
     # Initialization: Setting up serial communication.
 
-    def __init__(self, tx_pin, rx_pin, uartinstance=1, power_pin=None):
+    def __init__(self, tx_pin, rx_pin, uartinstance=1, power_pin=None, busy_pin=None):
         self.uart = machine.UART(uartinstance, baudrate=9600, tx=tx_pin, rx=rx_pin)
         if power_pin is not None:
             self.power_pin = machine.Pin(power_pin, machine.Pin.OUT)
+        if busy_pin is not None:
+            self.busy_pin = machine.Pin(busy_pin, machine.Pin.IN)
             
     def power_on(self):
         """
@@ -112,6 +115,7 @@ class DFPlayerMini:
         """
         if hasattr(self, 'power_pin'):
             self.power_pin.on()
+            self.wait_for_ready()
 
     def power_off(self):
         """
@@ -133,6 +137,16 @@ class DFPlayerMini:
         """
         # Wait for a specific time for DFPlayer Mini to initialize
         utime.sleep_ms(500)
+
+    def is_busy(self):
+        """
+        Check if the DFPlayer Mini is busy.
+
+        :return: True if the module is busy, False otherwise.
+        """
+        if hasattr(self, 'busy_pin'):
+            return self.busy_pin.value() == 0 # low means busy
+        return False
 
     # Sending Commands: General method to construct and send command packets.
 
