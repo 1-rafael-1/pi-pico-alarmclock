@@ -271,7 +271,7 @@ class StateManager:
 
     # region SoundManager methods
     def sound_alarm_sequence(self):
-        self.sound_manager.alarm_sequence()
+        self.sound_manager.alarm_start()
 
     def sound_alarm_stop(self):
         self.sound_manager.alarm_stop()

@@ -19,7 +19,7 @@ class AlarmManager:
         self.alarm_sequence_thread = None
         self.alarm_sequence_running = False
         self.alarm_sequence_sound_running = False
-        self.sunrise_duration = 300
+        self.sunrise_duration = 15
     
     def initialize(self):
         self.read_alarm_time()

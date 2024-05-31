@@ -10,9 +10,9 @@ class ApplicationManager:
 
     @micropython.native
     def set_logging_level(self):
-        self.state_mgr.log_set_verbose(False)
+        self.state_mgr.log_set_verbose(True)
         self.state_mgr.log_set_log(False)
-        self.state_mgr.log_set_max_log_length(1000)
+        self.state_mgr.log_set_max_log_length(500)
         self.state_mgr.log_set_log_file('log.txt')
         self.state_mgr.log_set_clean_log(False)
 
