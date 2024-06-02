@@ -5,8 +5,6 @@ from machine import Pin
 class SoundManager:
     def __init__(self, state_mgr):
         self.player = DFPlayerMini(uartinstance=1, tx_pin=4, rx_pin=5, power_pin=8, busy_pin=3, timeout=10)
-        # self.io1 = Pin(2, Pin.OUT)
-        # self.io2 = Pin(3, Pin.OUT)
         self.state_mgr = state_mgr
 
     def delay(self, times=1):
@@ -65,15 +63,15 @@ class SoundManager:
         self.player.play_track(track)
         self.delay(1)
         i = 0
-        while self.player.get_status() != 1:
-            self.state_mgr.log_emit(f"Not yet on status 1, current status is {self.player.get_status()}", self.__class__.__name__)
+        while not self.player.is_busy():
+            self.state_mgr.log_emit("Not yet busy", self.__class__.__name__)
             self.player.play_track(track)
             sleep(0.2)
             i += 1
             if i > 20:
-                self.state_mgr.log_emit(f"Not yet on status 1, current status is {self.player.get_status()}", self.__class__.__name__)
+                self.state_mgr.log_emit("Not yet busy, giving up", self.__class__.__name__)
                 break
-        self.state_mgr.log_emit(f"Mode reached 1 after {i} cycles", self.__class__.__name__)
+        self.state_mgr.log_emit(f"Busy reached {self.player.is_busy()} after {i} cycles", self.__class__.__name__)
 
     def pause(self):
         self.state_mgr.log_emit("Pausing", self.__class__.__name__)
@@ -104,9 +102,7 @@ class SoundManager:
     def power_on(self):
         self.state_mgr.log_emit("Powering on", self.__class__.__name__)
         self.player.power_on()
-        while self.get_status() not in [0, 1, 2, 3, 4]:
-            self.state_mgr.log_emit(f"Waiting for device to come online, current status is {self.get_status()}", self.__class__.__name__)
-            self.delay(1)
+        sleep(4)
 
     def power_off(self):
         self.state_mgr.log_emit("Powering off", self.__class__.__name__)
@@ -126,13 +122,6 @@ class SoundManager:
     def deinit(self):
         self.delay()
         self.power_off()
-
-    def play_by_io(self):
-        # play by io, very(!) stupid thing to do
-        self.state_mgr.log_emit("Playing by io", self.__class__.__name__)
-        self.io1.off()
-        sleep(0.6)
-        self.io2.on()
 
 ## Mocks for testing
 # use to test SoundManager in isolation
