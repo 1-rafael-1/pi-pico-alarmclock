@@ -4,9 +4,9 @@ from machine import Pin
 
 class SoundManager:
     def __init__(self, state_mgr):
-        self.player = DFPlayerMini(uartinstance=1, tx_pin=4, rx_pin=5, power_pin=8, busy_pin=3)
-        self.io1 = Pin(2, Pin.OUT)
-        self.io2 = Pin(3, Pin.OUT)
+        self.player = DFPlayerMini(uartinstance=1, tx_pin=4, rx_pin=5, power_pin=8, busy_pin=3, timeout=10)
+        # self.io1 = Pin(2, Pin.OUT)
+        # self.io2 = Pin(3, Pin.OUT)
         self.state_mgr = state_mgr
 
     def delay(self, times=1):
@@ -23,16 +23,57 @@ class SoundManager:
         return self.player.is_busy()
 
     def set_eq(self, eq):
-        self.state_mgr.log_emit("Setting equalizer to " + str(eq), self.__class__.__name__)
+        curr_eq = self.player.get_current_eq()
+        if curr_eq == eq:
+            self.state_mgr.log_emit("Equalizer already set to " + str(eq), self.__class__.__name__)
+            return
+        self.state_mgr.log_emit(f"Setting equalizer from {curr_eq} to {eq}", self.__class__.__name__)
         self.player.set_equalizer(eq)
+        self.delay(1)
+        i = 0
+        while self.player.get_current_eq() != eq:
+            self.state_mgr.log_emit(f"Equalizer not set to {eq}, current eq is {self.player.get_current_eq()}", self.__class__.__name__)
+            self.player.set_equalizer(eq)
+            sleep(0.2)
+            i += 1
+            if i > 20:
+                self.state_mgr.log_emit(f"Equalizer not set to {eq}, current eq is {self.player.get_current_eq()}", self.__class__.__name__)
+                break
+        self.state_mgr.log_emit(f"Equalizer set to {eq} after {i} cycles", self.__class__.__name__)
 
     def set_volume(self, volume):
-        self.state_mgr.log_emit("Setting volume to " + str(volume), self.__class__.__name__)
+        curr_volume = self.player.get_current_volume()
+        if curr_volume == volume:
+            self.state_mgr.log_emit("Volume already set to " + str(volume), self.__class__.__name__)
+            return
+        self.state_mgr.log_emit(f"Setting volume from {curr_volume} to {volume}", self.__class__.__name__)
         self.player.set_volume(volume)
+        self.delay(1)
+        i = 0
+        while self.player.get_current_volume() != volume:
+            self.state_mgr.log_emit(f"Volume not set to {volume}, current volume is {self.player.get_current_volume()}", self.__class__.__name__)
+            self.player.set_volume(volume)
+            sleep(0.2)
+            i += 1
+            if i > 20:
+                self.state_mgr.log_emit(f"Volume not set to {volume}, current volume is {self.player.get_current_volume()}", self.__class__.__name__)
+                break
+        self.state_mgr.log_emit(f"Volume set to {volume} after {i} cycles", self.__class__.__name__)
 
     def play(self, track):
         self.state_mgr.log_emit("Playing track " + str(track), self.__class__.__name__)
         self.player.play_track(track)
+        self.delay(1)
+        i = 0
+        while self.player.get_status() != 1:
+            self.state_mgr.log_emit(f"Not yet on status 1, current status is {self.player.get_status()}", self.__class__.__name__)
+            self.player.play_track(track)
+            sleep(0.2)
+            i += 1
+            if i > 20:
+                self.state_mgr.log_emit(f"Not yet on status 1, current status is {self.player.get_status()}", self.__class__.__name__)
+                break
+        self.state_mgr.log_emit(f"Mode reached 1 after {i} cycles", self.__class__.__name__)
 
     def pause(self):
         self.state_mgr.log_emit("Pausing", self.__class__.__name__)
@@ -62,9 +103,10 @@ class SoundManager:
 
     def power_on(self):
         self.state_mgr.log_emit("Powering on", self.__class__.__name__)
-        self.io1.on() #drivnig high to not ground
-        self.io2.on() #driving high to not ground
         self.player.power_on()
+        while self.get_status() not in [0, 1, 2, 3, 4]:
+            self.state_mgr.log_emit(f"Waiting for device to come online, current status is {self.get_status()}", self.__class__.__name__)
+            self.delay(1)
 
     def power_off(self):
         self.state_mgr.log_emit("Powering off", self.__class__.__name__)
@@ -73,6 +115,9 @@ class SoundManager:
     def alarm_start(self):
         self.state_mgr.log_emit("Playing alarm sequence", self.__class__.__name__)
         self.power_on()
+        self.set_eq(4) # classic
+        self.set_volume(10) # medium volume
+        self.play(1) # alarm track
 
     def alarm_stop(self):
         self.state_mgr.log_emit("Stopping alarm sequence", self.__class__.__name__)
@@ -154,7 +199,7 @@ def we_get_sane_states_from_the_sound_device():
     status = sound_mgr.get_status()
     #[THEN]: we get no status at all
     print("Before powering on: Status is " + str(status))
-    assert status == None, "Expected status to be None, but got " + str(status)
+    assert status == "Invalid Response", "Expected status to be Invalid Response, but got " + str(status)
     #[WHEN]: SoundManager powers on the device
     sound_mgr.power_on()
     #[THEN]: we get a status 0

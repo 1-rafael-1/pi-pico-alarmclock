@@ -41,6 +41,9 @@ class DFPlayerMini:
     CMD_STOP_ADVERT = 0x15
     CMD_STOP = 0x16
     CMD_QUERY_STATUS = 0x42
+    CMD_QUERY_VOLUME = 0x43
+    CMD_QUERY_EQ = 0x44
+    CMD_QUERY_PLAYBACK_MODE = 0x45
 
     # Feedback Types
     FEEDBACK_REPLY = 0x41
@@ -102,7 +105,7 @@ class DFPlayerMini:
 
     # Initialization: Setting up serial communication.
 
-    def __init__(self, tx_pin, rx_pin, uartinstance=1, power_pin=None, busy_pin=None):
+    def __init__(self, tx_pin, rx_pin, uartinstance=1, power_pin=None, busy_pin=None, txbuf=32, rxbuf=32, timeout=10, timeout_char=10, bits=8):
         self.uart = machine.UART(uartinstance, baudrate=9600, tx=tx_pin, rx=rx_pin)
         if power_pin is not None:
             self.power_pin = machine.Pin(power_pin, machine.Pin.OUT)
@@ -115,7 +118,6 @@ class DFPlayerMini:
         """
         if hasattr(self, 'power_pin'):
             self.power_pin.on()
-            self.wait_for_ready()
 
     def power_off(self):
         """
@@ -164,6 +166,13 @@ class DFPlayerMini:
         checksum_low = checksum & 0xFF
         command_packet = bytearray([self.START_BYTE, self.VERSION_BYTE, 0x06, command, 0x00, param_high, param_low, checksum_high, checksum_low, self.END_BYTE])
         self.uart.write(command_packet)
+        #print("Sent command: ", command_packet) 
+        #self.uart.flush()
+        i = 0
+        while not self.uart.txdone():
+            i += 1
+            utime.sleep_ms(10)
+        #print("Flushed UART after ", i, " attempts.")
 
     def calculate_checksum(self, command, param_high, param_low):
         """
@@ -258,24 +267,50 @@ class DFPlayerMini:
 
     # Querying Status: Get the current status of the player.
 
+    def read_response(self):
+        start_time = utime.ticks_ms()
+        while not self.uart.any():
+            # Break the loop if no response is received within a timeout period (e.g., 2000 ms)
+            if utime.ticks_diff(utime.ticks_ms(), start_time) > 2000:
+                return "Timeout Error"
+            utime.sleep_ms(10)  # Wait a bit before checking again
+
+        response = self.uart.read(10)
+        if len(response) == 10 and response[0] == self.START_BYTE and response[9] == self.END_BYTE:
+            if self.validate_checksum(response):
+                return response[6]  # The status byte
+            else:
+                return "Checksum Error"
+        else:
+            return "Invalid Response"
+    
     def get_status(self):
         """
         Get the current status of the player.
         """
         self.send_command(self.CMD_QUERY_STATUS)
-        utime.sleep_ms(100)  # Wait for the module to respond
-
-        if self.uart.any():
-            response = self.uart.read(10)
-            if len(response) == 10 and response[0] == self.START_BYTE and response[9] == self.END_BYTE:
-                if self.validate_checksum(response):
-                    return response[6]  # The status byte
-                else:
-                    return "Checksum Error"
-            else:
-                return "Invalid Response"
-        else:
-            return None
+        return self.read_response()
+    
+    def get_current_volume(self):
+        """
+        Get the current volume level.
+        """
+        self.send_command(self.CMD_QUERY_VOLUME) 
+        return self.read_response()
+    
+    def get_current_eq(self):
+        """
+        Get the current equalizer mode.
+        """
+        self.send_command(self.CMD_QUERY_EQ)
+        return self.read_response()
+    
+    def get_playback_mode(self):
+        """
+        Get the current playback mode.
+        """
+        self.send_command(self.CMD_QUERY_PLAYBACK_MODE)
+        return self.read_response()
 
     # Feedback Handling: Process feedback from the device, like track finished, error messages.
 
