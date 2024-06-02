@@ -18,7 +18,6 @@ class AlarmManager:
         self.alarm_quit_button_sequence = []
         self.alarm_sequence_thread = None
         self.alarm_sequence_running = False
-        self.alarm_sequence_sound_running = False
         self.sunrise_duration = 15
     
     def initialize(self):
@@ -139,7 +138,10 @@ class AlarmManager:
         self.set_alarm_sequence_running(True)
         self.state_mgr.neopixel_all_off()
         self.state_mgr.neopixel_sunrise(duration=self.sunrise_duration)
+        sleep(1)
+
         self.state_mgr.neopixel_all_off()
+        
         self.state_mgr.sound_alarm_sequence() # async, non-blocking
         while self.is_alarm_raised():
             for i in range(7):
@@ -194,7 +196,6 @@ class AlarmManager:
         self.alarm_raised_time = None
         self.state_mgr.neopixel_all_off()
         self.state_mgr.sound_alarm_stop()
-        self.alarm_sequence_sound_running = False
         self.state_mgr.display_clear_first_row()
         self.state_mgr.menu_set_state('idle')
         self.state_mgr.display_compose()
