@@ -10,7 +10,6 @@ class AlarmManager:
         self.state_mgr = state_mgr
         self.alarm_timer = None
         self.alarm_active = False
-        self.alarm_raised = False
         self.alarm_time = '{:02d}:{:02d}'.format(0,0) # ToDo: move to AlarmManager
         self.alarm_raised = False # ToDo: move to AlarmManager 
         self.alarm_raised_time = None
@@ -117,7 +116,6 @@ class AlarmManager:
             if self.alarm_raised_time is not None:
                 if time() - self.alarm_raised_time >= 600:
                     self.quit_alarm()
-                    self.alarm_raised_time = None
 
     @micropython.native
     def randomize_quit_button_sequenze(self):
